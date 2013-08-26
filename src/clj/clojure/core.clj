@@ -5246,6 +5246,9 @@
                name)
         metadata   (when (map? (first references)) (first references))
         references (if metadata (next references) references)
+        boot-type (or (second (first (filter #(= :boot (first %)) references))) :clojure)
+        boot-ns (symbol (str (clojure.core/name boot-type) ".core"))
+        boot-fn (symbol (str (clojure.core/name boot-type) ".core/boot"))
         name (if metadata
                (vary-meta name merge metadata)
                name)
@@ -5253,19 +5256,30 @@
         gen-class-call
           (when gen-class-clause
             (list* `gen-class :name (.replace (str name) \- \_) :impl-ns name :main true (next gen-class-clause)))
-        references (remove #(= :gen-class (first %)) references)
+        references (remove #(#{:gen-class :boot} (first %)) references)
         ;ns-effect (clojure.core/in-ns name)
         ]
     `(do
        (clojure.core/in-ns '~name)
        (with-loading-context
         ~@(when gen-class-call (list gen-class-call))
-        ~@(when (and (not= name 'clojure.core) (not-any? #(= :refer-clojure (first %)) references))
-            `((clojure.core/refer '~'clojure.core)))
-        ~@(map process-reference references))
-        (if (.equals '~name 'clojure.core) 
+        ~@(map process-reference references)
+        ~@(when-not (= boot-ns name)
+            `((clojure.core/require '~boot-ns))))
+       ~@(when-not (= boot-ns name)
+           `((~boot-fn '~(vec references))))
+       (if (.equals '~name 'clojure.core) 
           nil
           (do (dosync (commute @#'*loaded-libs* conj '~name)) nil)))))
+
+(defn boot
+  "Traditional Clojure bootstrap."
+  ([]
+     (boot nil))
+  ([references]
+     (when (and (not= (ns-name *ns*) 'clojure.core)
+                (not-any? #(= :refer-clojure (first %)) references))
+       (refer 'clojure.core))))
 
 (defmacro refer-clojure
   "Same as (refer 'clojure.core <filters>)"

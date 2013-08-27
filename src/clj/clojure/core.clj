@@ -5246,9 +5246,13 @@
                name)
         metadata   (when (map? (first references)) (first references))
         references (if metadata (next references) references)
-        boot-type (or (second (first (filter #(= :boot (first %)) references))) :clojure)
-        boot-ns (symbol (str (clojure.core/name boot-type) ".core"))
-        boot-fn (symbol (str (clojure.core/name boot-type) ".core/boot"))
+        template-type (or (second (first (filter #(= :template (first %)) references))) 'clojure)
+        template-name (clojure.core/name template-type)
+        template-name (if-not (pos? (.indexOf template-name (int \.)))
+                        (str template-name ".core")
+                        template-name)
+        template-ns (symbol template-name)
+        template-fn (symbol template-name "ns-template")
         name (if metadata
                (vary-meta name merge metadata)
                name)
@@ -5256,7 +5260,7 @@
         gen-class-call
           (when gen-class-clause
             (list* `gen-class :name (.replace (str name) \- \_) :impl-ns name :main true (next gen-class-clause)))
-        references (remove #(#{:gen-class :boot} (first %)) references)
+        references (remove #(#{:gen-class :template} (first %)) references)
         ;ns-effect (clojure.core/in-ns name)
         ]
     `(do
@@ -5264,18 +5268,18 @@
        (with-loading-context
         ~@(when gen-class-call (list gen-class-call))
         ~@(map process-reference references)
-        ~@(when-not (= boot-ns name)
-            `((clojure.core/require '~boot-ns))))
-       ~@(when-not (= boot-ns name)
-           `((~boot-fn '~(vec references))))
+        ~@(when-not (= template-ns name)
+            `((clojure.core/require '~template-ns))))
+       ~@(when-not (= template-ns name)
+           `((~template-fn '~(vec references))))
        (if (.equals '~name 'clojure.core) 
           nil
           (do (dosync (commute @#'*loaded-libs* conj '~name)) nil)))))
 
-(defn boot
-  "Traditional Clojure bootstrap."
+(defn ns-template
+  "Traditional Clojure ns template."
   ([]
-     (boot nil))
+     (ns-template nil))
   ([references]
      (when (and (not= (ns-name *ns*) 'clojure.core)
                 (not-any? #(= :refer-clojure (first %)) references))

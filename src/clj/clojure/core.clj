@@ -32,18 +32,18 @@
 (def
   ^{:macro true
     :added "1.0"}
-  let (fn* let [&form &env & decl] (cons 'let* decl)))
+  let (fn* let [&form &env & decl] (cons 'clojure.core/let* decl)))
 
 (def
  ^{:macro true
    :added "1.0"}
- loop (fn* loop [&form &env & decl] (cons 'loop* decl)))
+ loop (fn* loop [&form &env & decl] (cons 'clojure.core/loop* decl)))
 
 (def
  ^{:macro true
    :added "1.0"}
  fn (fn* fn [&form &env & decl] 
-         (.withMeta ^clojure.lang.IObj (cons 'fn* decl) 
+         (.withMeta ^clojure.lang.IObj (cons 'clojure.core/fn* decl) 
                     (.meta ^clojure.lang.IMeta &form))))
 
 (def
@@ -298,7 +298,7 @@
               fdecl (if (map? (last fdecl))
                       (butlast fdecl)
                       fdecl)
-              m (conj {:arglists (list 'quote (sigs fdecl))} m)
+              m (conj {:arglists (list 'clojure.core/quote (sigs fdecl))} m)
               m (let [inline (:inline m)
                       ifn (first inline)
                       iname (second inline)]
@@ -310,7 +310,7 @@
                                                      (next inline))))
                     m))
               m (conj (if (meta name) (meta name) {}) m)]
-          (list 'def (with-meta name m)
+          (list 'clojure.core/def (with-meta name m)
                 ;;todo - restore propagation of fn name
                 ;;must figure out how to convey primitive hints to self calls first
                 (cons `fn fdecl) ))))
@@ -460,10 +460,10 @@
                           (if p
                             (recur (next p) (cons (first p) d))
                             d))]
-               (list 'do
+               (list 'clojure.core/do
                      (cons `defn decl)
-                     (list '. (list 'var name) '(setMacro))
-                     (list 'var name)))))
+                     (list 'clojure.core/. (list 'clojure.core/var name) '(setMacro))
+                     (list 'clojure.core/var name)))))
 
 
 (. (var defmacro) (setMacro))
@@ -472,13 +472,13 @@
   "Evaluates test. If logical true, evaluates body in an implicit do."
   {:added "1.0"}
   [test & body]
-  (list 'if test (cons 'do body)))
+  (list 'clojure.core/if test (cons 'clojure.core/do body)))
 
 (defmacro when-not
   "Evaluates test. If logical false, evaluates body in an implicit do."
   {:added "1.0"}
   [test & body]
-    (list 'if test nil (cons 'do body)))
+    (list 'clojure.core/if test nil (cons 'clojure.core/do body)))
 
 (defn false?
   "Returns true if x is the value false, false otherwise."
@@ -556,7 +556,7 @@
   {:added "1.0"}
   [& clauses]
     (when clauses
-      (list 'if (first clauses)
+      (list 'clojure.core/if (first clauses)
             (if (next clauses)
                 (second clauses)
                 (throw (IllegalArgumentException.
@@ -639,7 +639,7 @@
   seq calls. See also - realized?"
   {:added "1.0"}
   [& body]
-  (list 'new 'clojure.lang.LazySeq (list* '^{:once true} fn* [] body)))    
+  (list 'clojure.core/new 'clojure.lang.LazySeq (list* '^{:once true} clojure.core/fn* [] body)))    
 
 (defn ^:static ^clojure.lang.ChunkBuffer chunk-buffer ^clojure.lang.ChunkBuffer [capacity]
   (clojure.lang.ChunkBuffer. capacity))
@@ -702,7 +702,7 @@
   calls. See also - realized?"
   {:added "1.0"}
   [& body]
-    (list 'new 'clojure.lang.Delay (list* `^{:once true} fn* [] body)))
+    (list 'clojure.core/new 'clojure.lang.Delay (list* `^{:once true} clojure.core/fn* [] body)))
 
 (defn delay?
   "returns true if x is a Delay created with delay"
@@ -2732,7 +2732,7 @@
 (defmacro declare
   "defs the supplied var names with no bindings, useful for making forward declarations."
   {:added "1.0"}
-  [& names] `(do ~@(map #(list 'def (vary-meta % assoc :declared true)) names)))
+  [& names] `(do ~@(map #(list 'clojure.core/def (vary-meta % assoc :declared true)) names)))
 
 (defn line-seq
   "Returns the lines of text from rdr as a lazy sequence of strings.
@@ -3085,7 +3085,7 @@
   macro in preference to calling this directly."
   {:added "1.0"}
   [& import-symbols-or-lists]
-  (let [specs (map #(if (and (seq? %) (= 'quote (first %))) (second %) %) 
+  (let [specs (map #(if (and (seq? %) (= 'clojure.core/quote (first %))) (second %) %) 
                    import-symbols-or-lists)]
     `(do ~@(map #(list 'clojure.core/import* %)
                 (reduce1 (fn [v spec] 
@@ -3999,10 +3999,12 @@
                            (if (seq bs)
                              (let [firstb (first bs)]
                                (cond
-                                (= firstb '&) (recur (pb ret (second bs) (list `nthnext gvec n))
-                                                     n
-                                                     (nnext bs)
-                                                     true)
+                                (or (= firstb 'clojure.core/&)
+                                    (= firstb '&))
+                                (recur (pb ret (second bs) (list `nthnext gvec n))
+                                       n
+                                       (nnext bs)
+                                       true)
                                 (= firstb :as) (pb ret (second bs) gvec)
                                 :else (if seen-rest?
                                         (throw (new Exception "Unsupported binding form, only :as can follow & parameter"))
@@ -4138,8 +4140,8 @@
           new-sigs (map psig sigs)]
       (with-meta
         (if name
-          (list* 'fn* name new-sigs)
-          (cons 'fn* new-sigs))
+          (list* 'clojure.core/fn* name new-sigs)
+          (cons 'clojure.core/fn* new-sigs))
         (meta &form))))
 
 (defmacro loop
@@ -4516,7 +4518,7 @@
   {:added "1.0"
    :static true}
   [s]
-    (contains? (. clojure.lang.Compiler specials) s))
+  (. clojure.lang.Compiler isSpecial s))
 
 (defn var?
   "Returns true if v is of type clojure.lang.Var"
@@ -5238,7 +5240,7 @@
   (let [process-reference
         (fn [[kname & args]]
           `(~(symbol "clojure.core" (clojure.core/name kname))
-             ~@(map #(list 'quote %) args)))
+             ~@(map #(list 'clojure.core/quote %) args)))
         docstring  (when (string? (first references)) (first references))
         references (if docstring (next references) references)
         name (if docstring
@@ -5268,13 +5270,14 @@
        (with-loading-context
         ~@(when gen-class-call (list gen-class-call))
         ~@(map process-reference references)
-        ~@(when-not (= template-ns name)
+        ~@(when-not (or (= template-ns name) (= template-ns 'clojure.core))
             `((clojure.core/require '~template-ns))))
-       ~@(when-not (= template-ns name)
-           `((~template-fn '~(vec references))))
        (if (.equals '~name 'clojure.core) 
           nil
-          (do (dosync (commute @#'*loaded-libs* conj '~name)) nil)))))
+          (do (dosync (commute @#'*loaded-libs* conj '~name)) nil))
+       ~@(when-not (= template-ns name)
+           `((~template-fn '~(vec references))))
+       )))
 
 (defn ns-template
   "Traditional Clojure ns template."
@@ -5284,6 +5287,10 @@
      (when (and (not= (ns-name *ns*) 'clojure.core)
                 (not-any? #(= :refer-clojure (first %)) references))
        (refer 'clojure.core))))
+
+(defn qualified-specials?
+  []
+  (. clojure.lang.Compiler (isQualifiedSpecials)))
 
 (defmacro refer-clojure
   "Same as (refer 'clojure.core <filters>)"

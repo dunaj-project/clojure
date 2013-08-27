@@ -44,7 +44,7 @@ static final Symbol LET = Symbol.intern("let*");
 static final Symbol LETFN = Symbol.intern("letfn*");
 static final Symbol DO = Symbol.intern("do");
 static final Symbol FN = Symbol.intern("fn*");
-static final Symbol FNONCE = (Symbol) Symbol.intern("fn*").withMeta(RT.map(Keyword.intern(null, "once"), RT.T));
+static final Symbol FNONCE = (Symbol) Symbol.intern("clojure.core", "fn*").withMeta(RT.map(Keyword.intern(null, "once"), RT.T));
 static final Symbol QUOTE = Symbol.intern("quote");
 static final Symbol THE_VAR = Symbol.intern("var");
 static final Symbol DOT = Symbol.intern(".");
@@ -90,6 +90,7 @@ static final String COMPILE_STUB_PREFIX = "compile__stub";
 static final Keyword protocolKey = Keyword.intern(null, "protocol");
 static final Keyword onKey = Keyword.intern(null, "on");
 static Keyword dynamicKey = Keyword.intern("dynamic");
+static Keyword qualifiedSpecialsKey = Keyword.intern("qualified-specials");
 
 static final Symbol NS = Symbol.intern("ns");
 static final Symbol IN_NS = Symbol.intern("in-ns");
@@ -98,6 +99,59 @@ static final Symbol IN_NS = Symbol.intern("in-ns");
 //static final Symbol USE = Symbol.intern("use");
 
 //static final Symbol IFN = Symbol.intern("clojure.lang", "IFn");
+
+static final Symbol QDEF = Symbol.intern("clojure.core", "def");
+static final Symbol QLOOP = Symbol.intern("clojure.core", "loop*");
+static final Symbol QRECUR = Symbol.intern("clojure.core", "recur");
+static final Symbol QIF = Symbol.intern("clojure.core", "if"); // might have missed some
+static final Symbol QCASE = Symbol.intern("clojure.core", "case*");
+static final Symbol QLET = Symbol.intern("clojure.core", "let*");
+static final Symbol QLETFN = Symbol.intern("clojure.core", "letfn*");
+static final Symbol QDO = Symbol.intern("clojure.core", "do");
+static final Symbol QFN = Symbol.intern("clojure.core", "fn*");
+static final Symbol QQUOTE = Symbol.intern("clojure.core", "quote");
+static final Symbol QTHE_VAR = Symbol.intern("clojure.core", "var");
+static final Symbol QIMPORT = Symbol.intern("clojure.core", "import*");
+static final Symbol QDOT = Symbol.intern("clojure.core", "."); // might have missed some
+static final Symbol QASSIGN = Symbol.intern("clojure.core", "set!");
+static final Symbol QDEFTYPE = Symbol.intern("clojure.core", "deftype*");
+static final Symbol QREIFY = Symbol.intern("clojure.core", "reify*");
+static final Symbol QTRY = Symbol.intern("clojure.core", "try");
+static final Symbol QTHROW = Symbol.intern("clojure.core", "throw");
+static final Symbol QMONITOR_ENTER = Symbol.intern("clojure.core", "monitor-enter");
+static final Symbol QMONITOR_EXIT = Symbol.intern("clojure.core", "monitor-exit");
+static final Symbol QCATCH = Symbol.intern("clojure.core", "catch");
+static final Symbol QFINALLY = Symbol.intern("clojure.core", "finally");
+static final Symbol QNEW = Symbol.intern("clojure.core", "new");
+static final Symbol QAMP = Symbol.intern("clojure.core", "&");
+
+
+static final public IPersistentMap qualifiedSpecials = PersistentHashMap.create(
+	QDEF, new DefExpr.Parser(),
+	QLOOP, new LetExpr.Parser(),
+	QRECUR, new RecurExpr.Parser(),
+	QIF, new IfExpr.Parser(),
+	QCASE, new CaseExpr.Parser(),
+	QLET, new LetExpr.Parser(),
+	QLETFN, new LetFnExpr.Parser(),
+	QDO, new BodyExpr.Parser(),
+	QFN, null,
+	QQUOTE, new ConstantExpr.Parser(),
+	QTHE_VAR, new TheVarExpr.Parser(),
+	QIMPORT, new ImportExpr.Parser(),
+	QDOT, new HostExpr.Parser(),
+	QASSIGN, new AssignExpr.Parser(),
+	QDEFTYPE, new NewInstanceExpr.DeftypeParser(),
+	QREIFY, new NewInstanceExpr.ReifyParser(),
+	QTRY, new TryExpr.Parser(),
+	QTHROW, new ThrowExpr.Parser(),
+	QMONITOR_ENTER, new MonitorEnterExpr.Parser(),
+	QMONITOR_EXIT, new MonitorExitExpr.Parser(),
+	QCATCH, null,
+	QFINALLY, null,
+	QNEW, new NewExpr.Parser(),
+	QAMP, null
+);
 
 static final public IPersistentMap specials = PersistentHashMap.create(
 		DEF, new DefExpr.Parser(),
@@ -337,8 +391,60 @@ interface IParser{
 	Expr parse(C context, Object form) ;
 }
 
-static boolean isSpecial(Object sym){
-	return specials.containsKey(sym);
+public static boolean isQualifiedSpecials(){
+	Namespace n = currentNS();
+	IPersistentMap mm = n.meta();
+	return RT.booleanCast(RT.get(mm,qualifiedSpecialsKey));
+}
+
+public static boolean isSpecial(Object sym){
+	if(sym instanceof Symbol) {
+		if (isQualifiedSpecials()) {
+			return qualifiedSpecials.containsKey(resolveSymbol((Symbol)sym));
+		} else {
+			return qualifiedSpecials.containsKey(resolveSymbol((Symbol)sym)) || specials.containsKey(sym);
+		}
+	} else {
+		return false;
+	}
+}
+
+static IParser specialParser(Object sym){
+	if(sym instanceof Symbol) {
+		if (isQualifiedSpecials()) {
+			return (IParser) qualifiedSpecials.valAt(resolveSymbol((Symbol)sym));
+		} else {
+			IParser p = (IParser) qualifiedSpecials.valAt(resolveSymbol((Symbol)sym));
+			if (p == null) {
+				p = (IParser) specials.valAt(sym);
+			}
+			return p;
+		}
+	} else {
+		return null;
+	}
+}
+
+static Symbol resolveSpecial(Object o){
+	// o must point to special symbol
+	Symbol sym = (Symbol) o;
+	if (isQualifiedSpecials()) {
+		return resolveSymbol(sym);
+	} else {
+		Symbol r = resolveUnqualifiedSpecial(sym);
+		if (r == null) {
+			r = resolveSymbol(sym);
+		}
+		return r;
+	}
+}
+
+static Symbol resolveUnqualifiedSpecial(Symbol sym) {
+	if (sym.ns == null) {
+		return Symbol.intern("clojure.core", sym.name);
+	} else {
+		return null;
+	}
 }
 
 static Symbol resolveSymbol(Symbol sym){
@@ -2150,7 +2256,7 @@ public static class TryExpr implements Expr{
 				{
 				Object f = fs.first();
 				Object op = (f instanceof ISeq) ? ((ISeq) f).first() : null;
-				if(!Util.equals(op, CATCH) && !Util.equals(op, FINALLY))
+				if(!Util.equals(op, CATCH) && !Util.equals(op, FINALLY) && !Util.equals(op, QCATCH) && !Util.equals(op, QFINALLY))
 					{
 					if(caught)
                                             throw Util.runtimeException("Only catch or finally clause can follow catch in try expression");
@@ -2165,7 +2271,7 @@ public static class TryExpr implements Expr{
                                                 } finally {
                                                     Var.popThreadBindings();
                                                 }
-					if(Util.equals(op, CATCH))
+					if(Util.equals(op, CATCH) || Util.equals(op, QCATCH))
 						{
 						Class c = HostExpr.maybeClass(RT.second(f), false);
 						if(c == null)
@@ -3327,7 +3433,7 @@ static class StaticInvokeExpr implements Expr, MaybePrimitiveExpr{
 				throw new IllegalStateException("Expected vector arglist, had: " + aseq.first());
 			IPersistentVector alist = (IPersistentVector) aseq.first();
 			if(alist.count() > 1
-			   && alist.nth(alist.count() - 2).equals(_AMP_))
+			   && (alist.nth(alist.count() - 2).equals(_AMP_) || alist.nth(alist.count() - 2).equals(QAMP)))
 				{
 				if(argcount >= alist.count() - 2)
 					{
@@ -3443,7 +3549,7 @@ static class InvokeExpr implements Expr{
 		    Object sigTag = null;
 		    for(ISeq s = RT.seq(arglists); s != null; s = s.next()) {
                 APersistentVector sig = (APersistentVector) s.first();
-                int restOffset = sig.indexOf(_AMP_);
+                int restOffset = Math.max(sig.indexOf(_AMP_), sig.indexOf(QAMP));
                 if (args.count() == sig.count() || (restOffset > -1 && args.count() >= restOffset)) {
                     sigTag = tagOf(sig);
                     break;
@@ -3746,13 +3852,13 @@ static public class FnExpr extends ObjExpr{
 				Symbol nm = (Symbol) RT.second(form);
 				fn.thisName = nm.name;
 				fn.isStatic = false; //RT.booleanCast(RT.get(nm.meta(), staticKey));
-				form = RT.cons(FN, RT.next(RT.next(form)));
+				form = RT.cons(QFN, RT.next(RT.next(form)));
 				}
 
 			//now (fn [args] body...) or (fn ([args] body...) ([args2] body2...) ...)
 			//turn former into latter
 			if(RT.second(form) instanceof IPersistentVector)
-				form = RT.list(FN, RT.next(form));
+				form = RT.list(QFN, RT.next(form));
 			fn.line = lineDeref();
 			fn.column = columnDeref();
 			FnMethod[] methodArray = new FnMethod[MAX_POSITIONAL_ARITY + 1];
@@ -5080,20 +5186,16 @@ public static class FnMethod extends ObjMethod{
 				if(!(parms.nth(i) instanceof Symbol))
 					throw new IllegalArgumentException("fn params must be Symbols");
 				Symbol p = (Symbol) parms.nth(i);
-				if(p.getNamespace() != null)
-					throw Util.runtimeException("Can't use qualified name as parameter: " + p);
-				if(p.equals(_AMP_))
-					{
+				if(p.equals(_AMP_) || p.equals(QAMP)) {
 //					if(isStatic)
 //						throw Util.runtimeException("Variadic fns cannot be static");
 					if(state == PSTATE.REQ)
 						state = PSTATE.REST;
 					else
 						throw Util.runtimeException("Invalid parameter list");
-					}
-
-				else
-					{
+				} else if(p.getNamespace() != null) {
+					throw Util.runtimeException("Can't use qualified name as parameter: " + p);
+                                } else {
 					Class pc = primClass(tagClass(tagOf(p)));
 //					if(pc.isPrimitive() && !isStatic)
 //						{
@@ -5715,7 +5817,8 @@ public static class BodyExpr implements Expr, MaybePrimitiveExpr{
 	static class Parser implements IParser{
 		public Expr parse(C context, Object frms) {
 			ISeq forms = (ISeq) frms;
-			if(Util.equals(RT.first(forms), DO))
+			if((!isQualifiedSpecials() && Util.equals(RT.first(forms), DO)) || 
+                           Util.equals(RT.first(forms), QDO))
 				forms = RT.next(forms);
 			PersistentVector exprs = PersistentVector.EMPTY;
 			for(; forms != null; forms = forms.next())
@@ -5938,7 +6041,7 @@ public static class LetExpr implements Expr, MaybePrimitiveExpr{
 		public Expr parse(C context, Object frm) {
 			ISeq form = (ISeq) frm;
 			//(let [var val var2 val2 ...] body...)
-			boolean isLoop = RT.first(form).equals(LOOP);
+			boolean isLoop = RT.first(form).equals(LOOP) || RT.first(form).equals(QLOOP);
 			if(!(RT.second(form) instanceof IPersistentVector))
 				throw new IllegalArgumentException("Bad binding form, expected vector");
 
@@ -6506,7 +6609,7 @@ public static Object macroexpand1(Object x) {
 						{
 						target = ((IObj)RT.list(IDENTITY, target)).withMeta(RT.map(RT.TAG_KEY,CLASS));
 						}
-					return preserveTag(form, RT.listStar(DOT, target, meth, form.next().next()));
+					return preserveTag(form, RT.listStar(QDOT, target, meth, form.next().next()));
 					}
 				else if(namesStaticMember(sym))
 					{
@@ -6515,7 +6618,7 @@ public static Object macroexpand1(Object x) {
 					if(c != null)
 						{
 						Symbol meth = Symbol.intern(sym.name);
-						return preserveTag(form, RT.listStar(DOT, target, meth, form.next()));
+						return preserveTag(form, RT.listStar(QDOT, target, meth, form.next()));
 						}
 					}
 				else
@@ -6527,12 +6630,12 @@ public static Object macroexpand1(Object x) {
 //						{
 //						Symbol target = Symbol.intern(sname.substring(0, idx));
 //						Symbol meth = Symbol.intern(sname.substring(idx + 1));
-//						return RT.listStar(DOT, target, meth, form.rest());
+//						return RT.listStar(QDOT, target, meth, form.rest());
 //						}
 					//(StringBuilder. "foo") => (new StringBuilder "foo")	
 					//else 
 					if(idx == sname.length() - 1)
-						return RT.listStar(NEW, Symbol.intern(sname.substring(0, idx)), form.next());
+						return RT.listStar(QNEW, Symbol.intern(sname.substring(0, idx)), form.next());
 					}
 				}
 			}
@@ -6569,9 +6672,9 @@ private static Expr analyzeSeq(C context, ISeq form, String name) {
 		if(inline != null)
 			return analyze(context, preserveTag(form, inline.applyTo(RT.next(form))));
 		IParser p;
-		if(op.equals(FN))
+		if(op.equals(QFN) || (!isQualifiedSpecials() && op.equals(FN)))
 			return FnExpr.parse(context, form, name);
-		else if((p = (IParser) specials.valAt(op)) != null)
+		else if((p = specialParser(op)) != null)
 			return p.parse(context, form);
 		else
 			return InvokeExpr.parse(context, form);
@@ -6616,7 +6719,8 @@ public static Object eval(Object form, boolean freshLoader) {
 		try
 			{
 			form = macroexpand(form);
-			if(form instanceof IPersistentCollection && Util.equals(RT.first(form), DO))
+			if(form instanceof IPersistentCollection && 
+                           (Util.equals(RT.first(form), QDO) || (!isQualifiedSpecials() && Util.equals(RT.first(form), DO))))
 				{
 				ISeq s = RT.next(form);
 				for(; RT.next(s) != null; s = RT.next(s))
@@ -6628,7 +6732,7 @@ public static Object eval(Object form, boolean freshLoader) {
 					&& !(RT.first(form) instanceof Symbol
 						&& ((Symbol) RT.first(form)).name.startsWith("def"))))
 				{
-				ObjExpr fexpr = (ObjExpr) analyze(C.EXPRESSION, RT.list(FN, PersistentVector.EMPTY, form),
+				ObjExpr fexpr = (ObjExpr) analyze(C.EXPRESSION, RT.list(QFN, PersistentVector.EMPTY, form),
 													"eval" + RT.nextID());
 				IFn fn = (IFn) fexpr.eval();
 				return fn.invoke();
@@ -6798,7 +6902,7 @@ private static Expr analyzeSymbol(Symbol sym) {
 		if(isMacro(v) != null)
 			throw Util.runtimeException("Can't take value of a macro: " + v);
 		if(RT.booleanCast(RT.get(v.meta(),RT.CONST_KEY)))
-			return analyze(C.EXPRESSION, RT.list(QUOTE, v.get()));
+			return analyze(C.EXPRESSION, RT.list(QQUOTE, v.get()));
 		registerVar(v);
 		return new VarExpr(v, tag);
 		}
@@ -7151,7 +7255,8 @@ static void compile1(GeneratorAdapter gen, ObjExpr objx, Object form) {
 	try
 		{
 		form = macroexpand(form);
-		if(form instanceof IPersistentCollection && Util.equals(RT.first(form), DO))
+		if(form instanceof IPersistentCollection && 
+                   (Util.equals(RT.first(form), QDO) || (!isQualifiedSpecials() && Util.equals(RT.first(form), DO))))
 			{
 			for(ISeq s = RT.next(form); s != null; s = RT.next(s))
 				{

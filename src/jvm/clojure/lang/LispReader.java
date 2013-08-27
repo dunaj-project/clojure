@@ -38,8 +38,8 @@ import java.util.regex.Pattern;
 
 public class LispReader{
 
-static final Symbol QUOTE = Symbol.intern("quote");
-static final Symbol THE_VAR = Symbol.intern("var");
+static final Symbol QUOTE = Symbol.intern("clojure.core", "quote");
+static final Symbol THE_VAR = Symbol.intern("clojure.core", "var");
 //static Symbol SYNTAX_QUOTE = Symbol.intern(null, "syntax-quote");
 static Symbol UNQUOTE = Symbol.intern("clojure.core", "unquote");
 static Symbol UNQUOTE_SPLICING = Symbol.intern("clojure.core", "unquote-splicing");
@@ -658,7 +658,7 @@ public static class FnReader extends AFn{
 					args = args.cons(restsym);
 					}
 				}
-			return RT.list(Compiler.FN, args, form);
+			return RT.list(Compiler.QFN, args, form);
 			}
 		finally
 			{
@@ -697,7 +697,7 @@ static class ArgReader extends AFn{
 			return registerArg(1);
 			}
 		Object n = read(r, true, null, true);
-		if(n.equals(Compiler._AMP_))
+		if(n.equals(Compiler._AMP_) || n.equals(Compiler.QAMP))
 			return registerArg(-1);
 		if(!(n instanceof Number))
 			throw new IllegalStateException("arg literal must be %, %& or %integer");
@@ -768,7 +768,8 @@ public static class SyntaxQuoteReader extends AFn{
 	static Object syntaxQuote(Object form) {
 		Object ret;
 		if(Compiler.isSpecial(form))
-			ret = RT.list(Compiler.QUOTE, form);
+                    //			ret = RT.list(Compiler.QUOTE, form);
+			ret = RT.list(Compiler.QQUOTE, Compiler.resolveSpecial(form));
 		else if(form instanceof Symbol)
 			{
 			Symbol sym = (Symbol) form;
@@ -809,7 +810,7 @@ public static class SyntaxQuoteReader extends AFn{
 				else
 					sym = Compiler.resolveSymbol(sym);
 				}
-			ret = RT.list(Compiler.QUOTE, sym);
+			ret = RT.list(Compiler.QQUOTE, sym);
 			}
 		else if(isUnquote(form))
 			return RT.second(form);
@@ -849,7 +850,7 @@ public static class SyntaxQuoteReader extends AFn{
 		        || form instanceof String)
 			ret = form;
 		else
-			ret = RT.list(Compiler.QUOTE, form);
+			ret = RT.list(Compiler.QQUOTE, form);
 
 		if(form instanceof IObj && RT.meta(form) != null)
 			{
@@ -1034,7 +1035,7 @@ public static class EvalReader extends AFn{
 		else if(o instanceof IPersistentList)
 			{
 			Symbol fs = (Symbol) RT.first(o);
-			if(fs.equals(THE_VAR))
+			if(fs.equals(THE_VAR) || (!Compiler.isQualifiedSpecials() && fs.equals(Compiler.QTHE_VAR)))
 				{
 				Symbol vs = (Symbol) RT.second(o);
 				return RT.var(vs.ns, vs.name);  //Compiler.resolve((Symbol) RT.second(o),true);

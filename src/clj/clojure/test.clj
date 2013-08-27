@@ -617,7 +617,7 @@
   {:added "1.1"}
   [name & body]
   (when *load-tests*
-    `(def ~(vary-meta name assoc :test `(fn [] ~@body))
+    `(clojure.core/def ~(vary-meta name assoc :test `(fn [] ~@body))
           (fn [] (test-var (var ~name))))))
 
 (defmacro deftest-
@@ -625,7 +625,7 @@
   {:added "1.1"}
   [name & body]
   (when *load-tests*
-    `(def ~(vary-meta name assoc :test `(fn [] ~@body) :private true)
+    `(clojure.core/def ~(vary-meta name assoc :test `(fn [] ~@body) :private true)
           (fn [] (test-var (var ~name))))))
 
 

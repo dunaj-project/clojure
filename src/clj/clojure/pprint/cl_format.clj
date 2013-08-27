@@ -1308,7 +1308,7 @@ not a pretty writer (which keeps track of columns), this function always outputs
 (defmacro ^{:private true}
   defdirectives 
   [ & directives ]
-  `(def ^{:private true}
+  `(clojure.core/def ^{:private true}
         directive-table (hash-map ~@(mapcat process-directive-table-element directives))))
 
 (defdirectives 

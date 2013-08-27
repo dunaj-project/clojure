@@ -591,7 +591,7 @@
 (defn- emit-protocol [name opts+sigs]
   (let [iname (symbol (str (munge (namespace-munge *ns*)) "." (munge name)))
         [opts sigs]
-        (loop [opts {:on (list 'quote iname) :on-interface iname} sigs opts+sigs]
+        (loop [opts {:on (list 'clojure.core/quote iname) :on-interface iname} sigs opts+sigs]
           (condp #(%1 %2) (first sigs) 
             string? (recur (assoc opts :doc (first sigs)) (next sigs))
             keyword? (recur (assoc opts (first sigs) (second sigs)) (nnext sigs))

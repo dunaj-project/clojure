@@ -43,8 +43,8 @@
 ;;; :keyword, \char, or ""). The notable exception is #() which is special-cased.
 
 (def ^{:private true} reader-macros
-     {'quote "'", 'clojure.core/deref "@", 
-      'var "#'", 'clojure.core/unquote "~"})
+     {'clojure.core/quote "'", 'clojure.core/deref "@", 
+      'clojure.core/var "#'", 'clojure.core/unquote "~"})
 
 (defn- pprint-reader-macro [alis]
   (let [^String macro-char (reader-macros (first alis))]

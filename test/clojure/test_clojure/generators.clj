@@ -1,6 +1,6 @@
 (ns clojure.test-clojure.generators
   (:require [clojure.data.generators :as gen])
-  (:refer-clojure :exclude [namespace]))
+  (:refer-clojure :exclude [namespace var]))
 
 (defn var-value-source
   "Generates a scalar suitable for an initial var value."

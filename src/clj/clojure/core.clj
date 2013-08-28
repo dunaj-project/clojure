@@ -5248,13 +5248,14 @@
                name)
         metadata   (when (map? (first references)) (first references))
         references (if metadata (next references) references)
-        template-type (or (second (first (filter #(= :template (first %)) references))) 'clojure)
-        template-name (clojure.core/name template-type)
-        template-name (if-not (pos? (.indexOf template-name (int \.)))
-                        (str template-name ".core")
-                        template-name)
-        template-ns (symbol template-name)
-        template-fn (symbol template-name "ns-template")
+        api-type (or (second (first (filter #(= :api (first %)) references))) 'clojure)
+        api-args (drop 2 (first (filter #(= :api (first %)) references)))
+        api-name (clojure.core/name api-type)
+        api-name (if-not (pos? (.indexOf api-name (int \.)))
+                        (str api-name ".core")
+                        api-name)
+        api-ns (symbol api-name)
+        api-fn (symbol api-name "init-api")
         name (if metadata
                (vary-meta name merge metadata)
                name)
@@ -5262,7 +5263,7 @@
         gen-class-call
           (when gen-class-clause
             (list* `gen-class :name (.replace (str name) \- \_) :impl-ns name :main true (next gen-class-clause)))
-        references (remove #(#{:gen-class :template} (first %)) references)
+        references (remove #(#{:gen-class :api} (first %)) references)
         ;ns-effect (clojure.core/in-ns name)
         ]
     `(do
@@ -5270,23 +5271,21 @@
        (with-loading-context
         ~@(when gen-class-call (list gen-class-call))
         ~@(map process-reference references)
-        ~@(when-not (or (= template-ns name) (= template-ns 'clojure.core))
-            `((clojure.core/require '~template-ns))))
+        ~@(when-not (or (= api-ns name) (= api-ns 'clojure.core))
+            `((clojure.core/require '~api-ns))))
        (if (.equals '~name 'clojure.core) 
           nil
           (do (dosync (commute @#'*loaded-libs* conj '~name)) nil))
-       ~@(when-not (= template-ns name)
-           `((~template-fn '~(vec references))))
-       )))
+       ~@(when-not (= api-ns name)
+           `((~api-fn '~(vec references)
+                      ~@(map #(list 'clojure.core/quote %) api-args)))))))
 
-(defn ns-template
-  "Traditional Clojure ns template."
-  ([]
-     (ns-template nil))
-  ([references]
-     (when (and (not= (ns-name *ns*) 'clojure.core)
-                (not-any? #(= :refer-clojure (first %)) references))
-       (refer 'clojure.core))))
+(defn init-api
+  "Traditional Clojure API."
+  [references & args]
+  (when (and (not= (ns-name *ns*) 'clojure.core)
+             (not-any? #(= :refer-clojure (first %)) references))
+    (apply refer 'clojure.core args)))
 
 (defn qualified-specials?
   []
@@ -6963,3 +6962,28 @@
  (catch Throwable t
    (.printStackTrace t)
    (throw t)))
+
+;; code taken from flatland.useful.ns, copyright by flatland
+
+(defn alias-var
+  "Create a var with the supplied name in the current namespace,
+  having the same metadata and root-binding as the supplied var."
+  [name ^clojure.lang.Var var]
+  (let [var-name #(apply symbol
+                         (map str
+                              ((juxt (comp ns-name :ns) :name)
+                               (meta %))))]
+    (apply intern *ns*
+           (with-meta name
+             (merge {:dont-test (str "Alias of " (var-name var))}
+                    (meta var)
+                    (meta name)))
+           (when (.hasRoot var) [@var]))))
+
+(defmacro defalias
+  "Defines an alias for a var: a new var with the same root binding
+  (if any) and similar metadata. The metadata of the alias is its
+  initial metadata (as provided by def) merged into the metadata of
+  the original."
+  [dst src]
+  `(alias-var (quote ~dst) (var ~src)))

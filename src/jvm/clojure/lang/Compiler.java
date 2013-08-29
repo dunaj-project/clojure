@@ -412,7 +412,11 @@ public static boolean isSpecial(Object sym){
 static IParser specialParser(Object sym){
 	if(sym instanceof Symbol) {
 		if (isQualifiedSpecials()) {
-			return (IParser) qualifiedSpecials.valAt(resolveSymbol((Symbol)sym));
+			IParser p = (IParser) qualifiedSpecials.valAt(resolveSymbol((Symbol)sym));
+			if (p == null) {
+				p = (IParser) qualifiedSpecials.valAt(sym);
+			}
+			return p;
 		} else {
 			IParser p = (IParser) qualifiedSpecials.valAt(resolveSymbol((Symbol)sym));
 			if (p == null) {
@@ -428,22 +432,24 @@ static IParser specialParser(Object sym){
 static Symbol resolveSpecial(Object o){
 	// o must point to special symbol
 	Symbol sym = (Symbol) o;
+	return resolveUnqualifiedSpecial(sym);
+        /* // every special form is defined in clojure.core
 	if (isQualifiedSpecials()) {
 		return resolveSymbol(sym);
 	} else {
-		Symbol r = resolveUnqualifiedSpecial(sym);
 		if (r == null) {
 			r = resolveSymbol(sym);
 		}
 		return r;
 	}
+        */
 }
 
 static Symbol resolveUnqualifiedSpecial(Symbol sym) {
-	if (sym.ns == null) {
+        if (sym.ns == null) {
 		return Symbol.intern("clojure.core", sym.name);
 	} else {
-		return null;
+		return sym;
 	}
 }
 

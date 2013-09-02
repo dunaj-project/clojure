@@ -6966,17 +6966,24 @@
 (defmacro defalias
   "Defines an alias for a var with the same root binding
    and metadata."
-  ([alias var-sym]
-     `(defalias ~alias nil nil ~var-sym))
-  ([alias doc-or-attr var-sym]
-     (let [doc-string (when (string? doc-or-attr) doc-or-attr)
-           attr-map (when (map? doc-or-attr) doc-or-attr)]
-       `(defalias ~alias ~doc-string ~attr-map ~var-sym)))
-  ([alias doc-string attr-map var-sym]
-     `(let [var# (var ~var-sym)]
-        (apply intern *ns*
-               (with-meta '~alias
-                 (merge (meta var#) (meta '~alias)
-                        (when ~doc-string {:doc ~doc-string})
-                        ~attr-map))
-               (when (.hasRoot var#) [@var#])))))
+  {:arglists '([alias doc-string? attr-map? var-sym?])
+   :added "1.6"}
+  ([alias & args]
+     (let [doc-string (when (string? (first args)) (first args))
+           args (if doc-string (rest args) args)
+           attr-map (when (map? (first args)) (first args))
+           args (if attr-map (rest args) args)
+           var-sym (if (seq args)
+                     (first args)
+                     (symbol "clojure.core" (name alias)))
+           var-sym (if (and (empty? (namespace var-sym))
+                            (pos? (.indexOf (name var-sym) (int \.))))
+                     (symbol (name var-sym) (name alias))
+                     var-sym)]
+       `(let [var# (var ~var-sym)]
+          (apply intern *ns*
+                 (with-meta '~alias
+                   (merge (meta var#) (meta '~alias)
+                          ~(when doc-string `{:doc ~doc-string})
+                          ~attr-map))
+                 (when (.hasRoot var#) [@var#]))))))

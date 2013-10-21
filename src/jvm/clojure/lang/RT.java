@@ -27,6 +27,7 @@ import java.security.PrivilegedAction;
 import java.net.URL;
 import java.net.JarURLConnection;
 import java.nio.charset.Charset;
+import clojure.bridge.Protocol;
 
 public class RT{
 
@@ -469,6 +470,9 @@ static public void load(String scriptbase, boolean failIfNotFound) throws IOExce
 }
 
 static void doInit() throws ClassNotFoundException, IOException{
+    
+	Protocol.init();
+
 	load("clojure/core");
 
 	Var.pushThreadBindings(

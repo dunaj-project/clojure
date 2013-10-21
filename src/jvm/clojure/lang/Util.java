@@ -31,6 +31,7 @@ static public boolean equiv(Object k1, Object k2){
 			return Numbers.equal((Number)k1, (Number)k2);
 		else if(k1 instanceof IPersistentCollection || k2 instanceof IPersistentCollection)
 			return pcequiv(k1,k2);
+                // support for dunaj.compare/IEquiv protocol
                 else if(Protocol.satisfiesIEquiv(k1) || Protocol.satisfiesIEquiv(k2))
                     return Protocol.bridgeIEquivequiv(k1,k2);
 		return k1.equals(k2);
@@ -87,6 +88,7 @@ static public EquivPred equivPred(Object k1){
         return equivEquals;
     else if (k1 instanceof Collection || k1 instanceof Map)
         return equivColl;
+    // support for dunaj.compare/IEquiv protocol
     else if(Protocol.satisfiesIEquiv(k1))
         return equivBridge;
     return equivEquals;

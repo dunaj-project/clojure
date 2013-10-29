@@ -11,6 +11,8 @@
 
 (ns clojure.test-clojure.compilation
   (:import (clojure.lang Compiler Compiler$CompilerException))
+  (:require [clojure.test.generative :refer (defspec)]
+            [clojure.data.generators :as gen])
   (:use clojure.test
         [clojure.test-helper :only (should-not-reflect should-print-err-message)]))
 
@@ -199,3 +201,44 @@
       (doseq [f (.listFiles (java.io.File. "test"))
               :when (re-find #"dummy.clj" (str f))]
         (.delete f)))))
+
+(deftest CLJ-1184-do-in-non-list-test
+  (testing "do in a vector throws an exception"
+    (is (thrown? Compiler$CompilerException
+                 (eval '[do 1 2 3]))))
+  (testing "do in a set throws an exception"
+    (is (thrown? Compiler$CompilerException
+                 (eval '#{do}))))
+
+  ;; compile uses a separate code path so we have to call it directly
+  ;; to test it
+  (letfn [(compile [s]
+            (spit "test/clojure/bad_def_test.clj" (str "(ns clojure.bad-def-test)\n" s))
+            (try
+             (binding [*compile-path* "test"]
+               (clojure.core/compile 'clojure.bad-def-test))
+             (finally
+               (doseq [f (.listFiles (java.io.File. "test/clojure"))
+                       :when (re-find #"bad_def_test" (str f))]
+                 (.delete f)))))]
+    (testing "do in a vector throws an exception in compilation"
+      (is (thrown? Compiler$CompilerException (compile "[do 1 2 3]"))))
+    (testing "do in a set throws an exception in compilation"
+      (is (thrown? Compiler$CompilerException (compile "#{do}"))))))
+
+(defn gen-name []
+  ;; Not all names can be correctly demunged. Skip names that contain
+  ;; a munge word as they will not properly demunge.
+  (let [munge-words (remove clojure.string/blank?
+                            (conj (map #(clojure.string/replace % "_" "")
+                                       (vals Compiler/CHAR_MAP)) "_"))]
+    (first (filter (fn [n] (not-any? #(>= (.indexOf n %) 0) munge-words))
+                   (repeatedly #(name (gen/symbol (constantly 10))))))))
+
+(defn munge-roundtrip [n]
+  (Compiler/demunge (Compiler/munge n)))
+
+(defspec test-munge-roundtrip
+  munge-roundtrip
+  [^{:tag clojure.test-clojure.compilation/gen-name} n]
+  (assert (= n %)))

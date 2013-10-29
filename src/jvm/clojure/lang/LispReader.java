@@ -59,7 +59,7 @@ static Keyword UNKNOWN = Keyword.intern(null, "unknown");
 static IFn[] macros = new IFn[256];
 static IFn[] dispatchMacros = new IFn[256];
 //static Pattern symbolPat = Pattern.compile("[:]?([\\D&&[^:/]][^:/]*/)?[\\D&&[^:/]][^:/]*");
-static Pattern symbolPat = Pattern.compile("[:]?([\\D&&[^/]].*/)?(/|[\\D&&[^/]][^/]*)");
+static Pattern symbolPat = Pattern.compile("[:]?+([\\D&&[^/]].*/)?(/|[\\D&&[^/]][^/]*)");
 //static Pattern varPat = Pattern.compile("([\\D&&[^:\\.]][^:\\.]*):([\\D&&[^:\\.]][^:\\.]*)");
 //static Pattern intPat = Pattern.compile("[-+]?[0-9]+\\.?");
 static Pattern intPat =
@@ -1202,8 +1202,8 @@ public static class CtorReader extends AFn{
 		int ch = read1(r);
 
 		// flush whitespace
-		//while(isWhitespace(ch))
-		//	ch = read1(r);
+		while(isWhitespace(ch))
+			ch = read1(r);
 
 		// A defrecord ctor can take two forms. Check for map->R version first.
 		if(ch == '{')

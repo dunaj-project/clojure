@@ -71,6 +71,15 @@
                      (baz [a b] "two-arg baz!"))]
       (is (= "two-arg baz!" (baz obj nil)))
       (is (thrown? AbstractMethodError (baz obj)))))
+  (testing "error conditions checked when defining protocols"
+    (is (thrown-with-msg?
+         Exception
+         #"Definition of function m in protocol badprotdef must take at least one arg."
+         (eval '(defprotocol badprotdef (m [])))))
+    (is (thrown-with-msg?
+         Exception
+         #"Function m in protocol badprotdef was redefined. Specify all arities in single definition."
+         (eval '(defprotocol badprotdef (m [this arg]) (m [this arg1 arg2]))))))
   (testing "you can redefine a protocol with different methods"
     (eval '(defprotocol Elusive (old-method [x])))
     (eval '(defprotocol Elusive (new-method [x])))
@@ -436,6 +445,10 @@
     (is (thrown? Exception (read-string "(let [s \"en\"] #java.util.Locale[(str 'en)])")))
     (is (thrown? Exception (read-string "#clojure.test_clojure.protocols.RecordToTestLiterals{(keyword \"a\") 42}"))))
   
+  (testing "that ctors can have whitespace after class name but before {"
+    (is (= (RecordToTestLiterals. 42)
+           (read-string "#clojure.test_clojure.protocols.RecordToTestLiterals   {:a 42}"))))
+
   (testing "that the correct errors are thrown with malformed literals"
     (is (thrown-with-msg?
           Exception

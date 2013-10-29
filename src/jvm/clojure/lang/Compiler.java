@@ -5096,6 +5096,93 @@ public static class FnMethod extends ObjMethod{
 	Class retClass;
 	String prim ;
 
+        static private final Set primitiveTypes;
+
+        static {
+                String[] primArray = {"B", "S", "I", "F", "X", "C", 
+                                      "BB", "SB", "IB", "FB", "XB", "CB", "LB", "DB", "OB", 
+                                      "BS", "SS", "IS", "FS", "XS", "CS", "LS", "DS", "OS", 
+                                      "BI", "SI", "II", "FI", "XI", "CI", "LI", "DI", "OI", 
+                                      "BF", "SF", "IF", "FF", "XF", "CF", "LF", "DF", "OF", 
+                                      "BX", "SX", "IX", "FX", "XX", "CX", "LX", "DX", "OX", 
+                                      "BC", "SC", "IC", "FC", "XC", "CC", "LC", "DC", "OC",
+                                      "BL", "SL", "IL", "FL", "XL", "CL", 
+                                      "BD", "SD", "ID", "FD", "XD", "CD", 
+                                      "BO", "SO", "IO", "FO", "XO", "CO", 
+                                      "BBB", "SSB", "IIB", "FFB", "XXB", "CCB", "LLB", "DDB", "OOB", 
+                                      "BBS", "SSS", "IIS", "FFS", "XXS", "CCS", "LLS", "DDS", "OOS", 
+                                      "BBI", "SSI", "III", "FFI", "XXI", "CCI", "LLI", "DDI", "OOI", 
+                                      "BBF", "SSF", "IIF", "FFF", "XXF", "CCF", "LLF", "DDF", "OOF", 
+                                      "BBX", "SSX", "IIX", "FFX", "XXX", "CCX", "LLX", "DDX", "OOX", 
+                                      "BBC", "SSC", "IIC", "FFC", "XXC", "CCC", "LLC", "DDC", "OOC", 
+                                      "BBL", "SSL", "IIL", "FFL", "XXL", "CCL", 
+                                      "BBD", "SSD", "IID", "FFD", "XXD", "CCD", 
+                                      "BBO", "SSO", "IIO", "FFO", "XXO", "CCO", 
+                                      "OBB", "OSB", "OIB", "OFB", "OXB", "OCB", "OLB", "ODB", 
+                                      "OBS", "OSS", "OIS", "OFS", "OXS", "OCS", "OLS", "ODS", 
+                                      "OBI", "OSI", "OII", "OFI", "OXI", "OCI", "OLI", "ODI", 
+                                      "OBF", "OSF", "OIF", "OFF", "OXF", "OCF", "OLF", "ODF", 
+                                      "OBX", "OSX", "OIX", "OFX", "OXX", "OCX", "OLX", "ODX", 
+                                      "OBC", "OSC", "OIC", "OFC", "OXC", "OCC", "OLC", "ODC", 
+                                      "OBL", "OSL", "OIL", "OFL", "OXL", "OCL", 
+                                      "OBD", "OSD", "OID", "OFD", "OXD", "OCD", 
+                                      "OBO", "OSO", "OIO", "OFO", "OXO", "OCO", 
+                                      "OBBB", "OSSB", "OIIB", "OFFB", "OXXB", "OCCB", "OLLB", "ODDB", "OOOB", 
+                                      "OBBS", "OSSS", "OIIS", "OFFS", "OXXS", "OCCS", "OLLS", "ODDS", "OOOS", 
+                                      "OBBI", "OSSI", "OIII", "OFFI", "OXXI", "OCCI", "OLLI", "ODDI", "OOOI", 
+                                      "OBBF", "OSSF", "OIIF", "OFFF", "OXXF", "OCCF", "OLLF", "ODDF", "OOOF", 
+                                      "OBBX", "OSSX", "OIIX", "OFFX", "OXXX", "OCCX", "OLLX", "ODDX", "OOOX", 
+                                      "OBBC", "OSSC", "OIIC", "OFFC", "OXXC", "OCCC", "OLLC", "ODDC", "OOOC", 
+                                      "OBBL", "OSSL", "OIIL", "OFFL", "OXXL", "OCCL", 
+                                      "OBBD", "OSSD", "OIID", "OFFD", "OXXD", "OCCD", 
+                                      "OBBO", "OSSO", "OIIO", "OFFO", "OXXO", "OCCO", 
+                                      "L", "D", "OL", "OD", "LO", "LL", "LD", "DO", "DL", "DD", 
+                                      "OOL", "OOD", "OLO", "OLL", "OLD", "ODO", "ODL", "ODD", 
+                                      "LOO", "LOL", "LOD", "LLO", "LLL", "LLD", "LDO", "LDL", "LDD", 
+                                      "DOO", "DOL", "DOD", "DLO", "DLL", "DLD", "DDO", "DDL", "DDD", 
+                                      "OOOL", "OOOD", "OOLO", "OOLL", "OOLD", "OODO", "OODL", "OODD", 
+                                      "OLOO", "OLOL", "OLOD", "OLLO", "OLLL", "OLLD", "OLDO", "OLDL", "OLDD", 
+                                      "ODOO", "ODOL", "ODOD", "ODLO", "ODLL", "ODLD", "ODDO", "ODDL", "ODDD", 
+                                      "LOOO", "LOOL", "LOOD", "LOLO", "LOLL", "LOLD", "LODO", "LODL", "LODD", 
+                                      "LLOO", "LLOL", "LLOD", "LLLO", "LLLL", "LLLD", "LLDO", "LLDL", "LLDD", 
+                                      "LDOO", "LDOL", "LDOD", "LDLO", "LDLL", "LDLD", "LDDO", "LDDL", "LDDD", 
+                                      "DOOO", "DOOL", "DOOD", "DOLO", "DOLL", "DOLD", "DODO", "DODL", "DODD", 
+                                      "DLOO", "DLOL", "DLOD", "DLLO", "DLLL", "DLLD", "DLDO", "DLDL", "DLDD", 
+                                      "DDOO", "DDOL", "DDOD", "DDLO", "DDLL", "DDLD", "DDDO", "DDDL", "DDDD", 
+                                      "OOOOL", "OOOOD", "OOOLO", "OOOLL", "OOOLD", "OOODO", "OOODL", "OOODD", 
+                                      "OOLOO", "OOLOL", "OOLOD", "OOLLO", "OOLLL", "OOLLD", "OOLDO", "OOLDL", 
+                                      "OOLDD", "OODOO", "OODOL", "OODOD", "OODLO", "OODLL", "OODLD", "OODDO", 
+                                      "OODDL", "OODDD", "OLOOO", "OLOOL", "OLOOD", "OLOLO", "OLOLL", "OLOLD", 
+                                      "OLODO", "OLODL", "OLODD", "OLLOO", "OLLOL", "OLLOD", "OLLLO", "OLLLL", 
+                                      "OLLLD", "OLLDO", "OLLDL", "OLLDD", "OLDOO", "OLDOL", "OLDOD", "OLDLO", 
+                                      "OLDLL", "OLDLD", "OLDDO", "OLDDL", "OLDDD", "ODOOO", "ODOOL", "ODOOD", 
+                                      "ODOLO", "ODOLL", "ODOLD", "ODODO", "ODODL", "ODODD", "ODLOO", "ODLOL", 
+                                      "ODLOD", "ODLLO", "ODLLL", "ODLLD", "ODLDO", "ODLDL", "ODLDD", "ODDOO", 
+                                      "ODDOL", "ODDOD", "ODDLO", "ODDLL", "ODDLD", "ODDDO", "ODDDL", "ODDDD", 
+                                      "LOOOO", "LOOOL", "LOOOD", "LOOLO", "LOOLL", "LOOLD", "LOODO", "LOODL", 
+                                      "LOODD", "LOLOO", "LOLOL", "LOLOD", "LOLLO", "LOLLL", "LOLLD", "LOLDO", 
+                                      "LOLDL", "LOLDD", "LODOO", "LODOL", "LODOD", "LODLO", "LODLL", "LODLD", 
+                                      "LODDO", "LODDL", "LODDD", "LLOOO", "LLOOL", "LLOOD", "LLOLO", "LLOLL", 
+                                      "LLOLD", "LLODO", "LLODL", "LLODD", "LLLOO", "LLLOL", "LLLOD", "LLLLO", 
+                                      "LLLLL", "LLLLD", "LLLDO", "LLLDL", "LLLDD", "LLDOO", "LLDOL", "LLDOD", 
+                                      "LLDLO", "LLDLL", "LLDLD", "LLDDO", "LLDDL", "LLDDD", "LDOOO", "LDOOL", 
+                                      "LDOOD", "LDOLO", "LDOLL", "LDOLD", "LDODO", "LDODL", "LDODD", "LDLOO", 
+                                      "LDLOL", "LDLOD", "LDLLO", "LDLLL", "LDLLD", "LDLDO", "LDLDL", "LDLDD", 
+                                      "LDDOO", "LDDOL", "LDDOD", "LDDLO", "LDDLL", "LDDLD", "LDDDO", "LDDDL", 
+                                      "LDDDD", "DOOOO", "DOOOL", "DOOOD", "DOOLO", "DOOLL", "DOOLD", "DOODO", 
+                                      "DOODL", "DOODD", "DOLOO", "DOLOL", "DOLOD", "DOLLO", "DOLLL", "DOLLD", 
+                                      "DOLDO", "DOLDL", "DOLDD", "DODOO", "DODOL", "DODOD", "DODLO", "DODLL", 
+                                      "DODLD", "DODDO", "DODDL", "DODDD", "DLOOO", "DLOOL", "DLOOD", "DLOLO", 
+                                      "DLOLL", "DLOLD", "DLODO", "DLODL", "DLODD", "DLLOO", "DLLOL", "DLLOD", 
+                                      "DLLLO", "DLLLL", "DLLLD", "DLLDO", "DLLDL", "DLLDD", "DLDOO", "DLDOL", 
+                                      "DLDOD", "DLDLO", "DLDLL", "DLDLD", "DLDDO", "DLDDL", "DLDDD", "DDOOO", 
+                                      "DDOOL", "DDOOD", "DDOLO", "DDOLL", "DDOLD", "DDODO", "DDODL", "DDODD", 
+                                      "DDLOO", "DDLOL", "DDLOD", "DDLLO", "DDLLL", "DDLLD", "DDLDO", "DDLDL", 
+                                      "DDLDD", "DDDOO", "DDDOL", "DDDOD", "DDDLO", "DDDLL", "DDDLD", "DDDDO", 
+                                      "DDDDL", "DDDDD"};
+                primitiveTypes = new HashSet(Arrays.asList(primArray));
+        }
+
 	public FnMethod(ObjExpr objx, ObjMethod parent){
 		super(objx, parent);
 	}
@@ -5108,11 +5195,23 @@ public static class FnMethod extends ObjMethod{
 			c = primClass((Symbol) x);
 		if(c == null || !c.isPrimitive())
 			return 'O';
+		if(c == byte.class)
+			return 'B';
+		if(c == short.class)
+			return 'S';
+		if(c == int.class)
+			return 'I';
+		if(c == float.class)
+			return 'F';
+		if(c == boolean.class)
+			return 'X';
+		if(c == char.class)
+			return 'C';
 		if(c == long.class)
 			return 'L';
 		if(c == double.class)
 			return 'D';
-		throw new IllegalArgumentException("Only long and double primitives are supported");
+		throw new IllegalArgumentException("Unrecognized primitive");
 	}
 
 	static public String primInterface(IPersistentVector arglist) {
@@ -5121,9 +5220,11 @@ public static class FnMethod extends ObjMethod{
 			sb.append(classChar(tagOf(arglist.nth(i))));
 		sb.append(classChar(tagOf(arglist)));
 		String ret = sb.toString();
-		boolean prim = ret.contains("L") || ret.contains("D");
-		if(prim && arglist.count() > 4)
-			throw new IllegalArgumentException("fns taking primitives support only 4 or fewer args");
+		boolean prim = ret.contains("B") || ret.contains("S") || ret.contains("I") || 
+                               ret.contains("F") || ret.contains("X") || ret.contains("C") || 
+                               ret.contains("L") || ret.contains("D");
+		if(prim && !primitiveTypes.contains(ret))
+			throw new IllegalArgumentException("unsupported primitive function declaration");
 		if(prim)
 			return "clojure.lang.IFn$" + ret;
 		return null;
@@ -5158,8 +5259,8 @@ public static class FnMethod extends ObjMethod{
 				method.prim = method.prim.replace('.', '/');
 
 			method.retClass = tagClass(tagOf(parms));
-			if(method.retClass.isPrimitive() && !(method.retClass == double.class || method.retClass == long.class))
-				throw new IllegalArgumentException("Only long and double primitives are supported");
+			///if(method.retClass.isPrimitive() && !(method.retClass == double.class || method.retClass == long.class))
+                        ///throw new IllegalArgumentException("Only long and double primitives are supported");
 
 			//register 'this' as local 0
 			//registerLocal(THISFN, null, null);
@@ -5196,8 +5297,8 @@ public static class FnMethod extends ObjMethod{
 //						p = (Symbol) ((IObj) p).withMeta((IPersistentMap) RT.assoc(RT.meta(p), RT.TAG_KEY, null));
 //						}
 //						throw Util.runtimeException("Non-static fn can't have primitive parameter: " + p);
-					if(pc.isPrimitive() && !(pc == double.class || pc == long.class))
-						throw new IllegalArgumentException("Only long and double primitives are supported: " + p);
+					//if(pc.isPrimitive() && !(pc == double.class || pc == long.class))
+					//	throw new IllegalArgumentException("Only long and double primitives are supported: " + p);
 
 					if(state == PSTATE.REST && tagOf(p) != null)
 						throw Util.runtimeException("& arg cannot have type hint");
@@ -5324,7 +5425,8 @@ public static class FnMethod extends ObjMethod{
 
 	public void doEmitPrim(ObjExpr fn, ClassVisitor cv){
 		Type returnType;
-		if (retClass == double.class || retClass == long.class)
+		if (retClass == byte.class || retClass == short.class || retClass == int.class || retClass == long.class || 
+                    retClass == float.class || retClass == double.class || retClass == boolean.class || retClass == char.class)
 			returnType = getReturnType();
 		else returnType = OBJECT_TYPE;
 		Method ms = new Method("invokePrim", returnType, argtypes);

@@ -88,6 +88,331 @@ public Object invoke(Object arg1, Object arg2, Object arg3, Object arg4, Object 
 
 public Object applyTo(ISeq arglist) ;
 
+static public interface B{byte invokePrim();}
+static public interface S{short invokePrim();}
+static public interface I{int invokePrim();}
+static public interface F{float invokePrim();}
+static public interface X{boolean invokePrim();}
+static public interface C{char invokePrim();}
+
+static public interface BB{byte invokePrim(byte arg0);}
+static public interface SB{byte invokePrim(short arg0);}
+static public interface IB{byte invokePrim(int arg0);}
+static public interface FB{byte invokePrim(float arg0);}
+static public interface XB{byte invokePrim(boolean arg0);}
+static public interface CB{byte invokePrim(char arg0);}
+static public interface LB{byte invokePrim(long arg0);}
+static public interface DB{byte invokePrim(double arg0);}
+static public interface OB{byte invokePrim(Object arg0);}
+
+static public interface BS{short invokePrim(byte arg0);}
+static public interface SS{short invokePrim(short arg0);}
+static public interface IS{short invokePrim(int arg0);}
+static public interface FS{short invokePrim(float arg0);}
+static public interface XS{short invokePrim(boolean arg0);}
+static public interface CS{short invokePrim(char arg0);}
+static public interface LS{short invokePrim(long arg0);}
+static public interface DS{short invokePrim(double arg0);}
+static public interface OS{short invokePrim(Object arg0);}
+
+static public interface BI{int invokePrim(byte arg0);}
+static public interface SI{int invokePrim(short arg0);}
+static public interface II{int invokePrim(int arg0);}
+static public interface FI{int invokePrim(float arg0);}
+static public interface XI{int invokePrim(boolean arg0);}
+static public interface CI{int invokePrim(char arg0);}
+static public interface LI{int invokePrim(long arg0);}
+static public interface DI{int invokePrim(double arg0);}
+static public interface OI{int invokePrim(Object arg0);}
+
+static public interface BF{float invokePrim(byte arg0);}
+static public interface SF{float invokePrim(short arg0);}
+static public interface IF{float invokePrim(int arg0);}
+static public interface FF{float invokePrim(float arg0);}
+static public interface XF{float invokePrim(boolean arg0);}
+static public interface CF{float invokePrim(char arg0);}
+static public interface LF{float invokePrim(long arg0);}
+static public interface DF{float invokePrim(double arg0);}
+static public interface OF{float invokePrim(Object arg0);}
+
+static public interface BX{boolean invokePrim(byte arg0);}
+static public interface SX{boolean invokePrim(short arg0);}
+static public interface IX{boolean invokePrim(int arg0);}
+static public interface FX{boolean invokePrim(float arg0);}
+static public interface XX{boolean invokePrim(boolean arg0);}
+static public interface CX{boolean invokePrim(char arg0);}
+static public interface LX{boolean invokePrim(long arg0);}
+static public interface DX{boolean invokePrim(double arg0);}
+static public interface OX{boolean invokePrim(Object arg0);}
+
+static public interface BC{char invokePrim(byte arg0);}
+static public interface SC{char invokePrim(short arg0);}
+static public interface IC{char invokePrim(int arg0);}
+static public interface FC{char invokePrim(float arg0);}
+static public interface XC{char invokePrim(boolean arg0);}
+static public interface CC{char invokePrim(char arg0);}
+static public interface LC{char invokePrim(long arg0);}
+static public interface DC{char invokePrim(double arg0);}
+static public interface OC{char invokePrim(Object arg0);}
+
+static public interface BL{long invokePrim(byte arg0);}
+static public interface SL{long invokePrim(short arg0);}
+static public interface IL{long invokePrim(int arg0);}
+static public interface FL{long invokePrim(float arg0);}
+static public interface XL{long invokePrim(boolean arg0);}
+static public interface CL{long invokePrim(char arg0);}
+
+static public interface BD{double invokePrim(byte arg0);}
+static public interface SD{double invokePrim(short arg0);}
+static public interface ID{double invokePrim(int arg0);}
+static public interface FD{double invokePrim(float arg0);}
+static public interface XD{double invokePrim(boolean arg0);}
+static public interface CD{double invokePrim(char arg0);}
+
+static public interface BO{Object invokePrim(byte arg0);}
+static public interface SO{Object invokePrim(short arg0);}
+static public interface IO{Object invokePrim(int arg0);}
+static public interface FO{Object invokePrim(float arg0);}
+static public interface XO{Object invokePrim(boolean arg0);}
+static public interface CO{Object invokePrim(char arg0);}
+
+static public interface BBB{byte invokePrim(byte arg0, byte arg1);}
+static public interface SSB{byte invokePrim(short arg0, short arg1);}
+static public interface IIB{byte invokePrim(int arg0, int arg1);}
+static public interface FFB{byte invokePrim(float arg0, float arg1);}
+static public interface XXB{byte invokePrim(boolean arg0, boolean arg1);}
+static public interface CCB{byte invokePrim(char arg0, char arg1);}
+static public interface LLB{byte invokePrim(long arg0, long arg1);}
+static public interface DDB{byte invokePrim(double arg0, double arg1);}
+static public interface OOB{byte invokePrim(Object arg0, Object arg1);}
+
+static public interface BBS{short invokePrim(byte arg0, byte arg1);}
+static public interface SSS{short invokePrim(short arg0, short arg1);}
+static public interface IIS{short invokePrim(int arg0, int arg1);}
+static public interface FFS{short invokePrim(float arg0, float arg1);}
+static public interface XXS{short invokePrim(boolean arg0, boolean arg1);}
+static public interface CCS{short invokePrim(char arg0, char arg1);}
+static public interface LLS{short invokePrim(long arg0, long arg1);}
+static public interface DDS{short invokePrim(double arg0, double arg1);}
+static public interface OOS{short invokePrim(Object arg0, Object arg1);}
+
+static public interface BBI{int invokePrim(byte arg0, byte arg1);}
+static public interface SSI{int invokePrim(short arg0, short arg1);}
+static public interface III{int invokePrim(int arg0, int arg1);}
+static public interface FFI{int invokePrim(float arg0, float arg1);}
+static public interface XXI{int invokePrim(boolean arg0, boolean arg1);}
+static public interface CCI{int invokePrim(char arg0, char arg1);}
+static public interface LLI{int invokePrim(long arg0, long arg1);}
+static public interface DDI{int invokePrim(double arg0, double arg1);}
+static public interface OOI{int invokePrim(Object arg0, Object arg1);}
+
+static public interface BBF{float invokePrim(byte arg0, byte arg1);}
+static public interface SSF{float invokePrim(short arg0, short arg1);}
+static public interface IIF{float invokePrim(int arg0, int arg1);}
+static public interface FFF{float invokePrim(float arg0, float arg1);}
+static public interface XXF{float invokePrim(boolean arg0, boolean arg1);}
+static public interface CCF{float invokePrim(char arg0, char arg1);}
+static public interface LLF{float invokePrim(long arg0, long arg1);}
+static public interface DDF{float invokePrim(double arg0, double arg1);}
+static public interface OOF{float invokePrim(Object arg0, Object arg1);}
+
+static public interface BBX{boolean invokePrim(byte arg0, byte arg1);}
+static public interface SSX{boolean invokePrim(short arg0, short arg1);}
+static public interface IIX{boolean invokePrim(int arg0, int arg1);}
+static public interface FFX{boolean invokePrim(float arg0, float arg1);}
+static public interface XXX{boolean invokePrim(boolean arg0, boolean arg1);}
+static public interface CCX{boolean invokePrim(char arg0, char arg1);}
+static public interface LLX{boolean invokePrim(long arg0, long arg1);}
+static public interface DDX{boolean invokePrim(double arg0, double arg1);}
+static public interface OOX{boolean invokePrim(Object arg0, Object arg1);}
+
+static public interface BBC{char invokePrim(byte arg0, byte arg1);}
+static public interface SSC{char invokePrim(short arg0, short arg1);}
+static public interface IIC{char invokePrim(int arg0, int arg1);}
+static public interface FFC{char invokePrim(float arg0, float arg1);}
+static public interface XXC{char invokePrim(boolean arg0, boolean arg1);}
+static public interface CCC{char invokePrim(char arg0, char arg1);}
+static public interface LLC{char invokePrim(long arg0, long arg1);}
+static public interface DDC{char invokePrim(double arg0, double arg1);}
+static public interface OOC{char invokePrim(Object arg0, Object arg1);}
+
+static public interface BBL{long invokePrim(byte arg0, byte arg1);}
+static public interface SSL{long invokePrim(short arg0, short arg1);}
+static public interface IIL{long invokePrim(int arg0, int arg1);}
+static public interface FFL{long invokePrim(float arg0, float arg1);}
+static public interface XXL{long invokePrim(boolean arg0, boolean arg1);}
+static public interface CCL{long invokePrim(char arg0, char arg1);}
+
+static public interface BBD{double invokePrim(byte arg0, byte arg1);}
+static public interface SSD{double invokePrim(short arg0, short arg1);}
+static public interface IID{double invokePrim(int arg0, int arg1);}
+static public interface FFD{double invokePrim(float arg0, float arg1);}
+static public interface XXD{double invokePrim(boolean arg0, boolean arg1);}
+static public interface CCD{double invokePrim(char arg0, char arg1);}
+
+static public interface BBO{Object invokePrim(byte arg0, byte arg1);}
+static public interface SSO{Object invokePrim(short arg0, short arg1);}
+static public interface IIO{Object invokePrim(int arg0, int arg1);}
+static public interface FFO{Object invokePrim(float arg0, float arg1);}
+static public interface XXO{Object invokePrim(boolean arg0, boolean arg1);}
+static public interface CCO{Object invokePrim(char arg0, char arg1);}
+
+static public interface OBB{byte invokePrim(Object arg0, byte arg1);}
+static public interface OSB{byte invokePrim(Object arg0, short arg1);}
+static public interface OIB{byte invokePrim(Object arg0, int arg1);}
+static public interface OFB{byte invokePrim(Object arg0, float arg1);}
+static public interface OXB{byte invokePrim(Object arg0, boolean arg1);}
+static public interface OCB{byte invokePrim(Object arg0, char arg1);}
+static public interface OLB{byte invokePrim(Object arg0, long arg1);}
+static public interface ODB{byte invokePrim(Object arg0, double arg1);}
+
+static public interface OBS{short invokePrim(Object arg0, byte arg1);}
+static public interface OSS{short invokePrim(Object arg0, short arg1);}
+static public interface OIS{short invokePrim(Object arg0, int arg1);}
+static public interface OFS{short invokePrim(Object arg0, float arg1);}
+static public interface OXS{short invokePrim(Object arg0, boolean arg1);}
+static public interface OCS{short invokePrim(Object arg0, char arg1);}
+static public interface OLS{short invokePrim(Object arg0, long arg1);}
+static public interface ODS{short invokePrim(Object arg0, double arg1);}
+
+static public interface OBI{int invokePrim(Object arg0, byte arg1);}
+static public interface OSI{int invokePrim(Object arg0, short arg1);}
+static public interface OII{int invokePrim(Object arg0, int arg1);}
+static public interface OFI{int invokePrim(Object arg0, float arg1);}
+static public interface OXI{int invokePrim(Object arg0, boolean arg1);}
+static public interface OCI{int invokePrim(Object arg0, char arg1);}
+static public interface OLI{int invokePrim(Object arg0, long arg1);}
+static public interface ODI{int invokePrim(Object arg0, double arg1);}
+
+static public interface OBF{float invokePrim(Object arg0, byte arg1);}
+static public interface OSF{float invokePrim(Object arg0, short arg1);}
+static public interface OIF{float invokePrim(Object arg0, int arg1);}
+static public interface OFF{float invokePrim(Object arg0, float arg1);}
+static public interface OXF{float invokePrim(Object arg0, boolean arg1);}
+static public interface OCF{float invokePrim(Object arg0, char arg1);}
+static public interface OLF{float invokePrim(Object arg0, long arg1);}
+static public interface ODF{float invokePrim(Object arg0, double arg1);}
+
+static public interface OBX{boolean invokePrim(Object arg0, byte arg1);}
+static public interface OSX{boolean invokePrim(Object arg0, short arg1);}
+static public interface OIX{boolean invokePrim(Object arg0, int arg1);}
+static public interface OFX{boolean invokePrim(Object arg0, float arg1);}
+static public interface OXX{boolean invokePrim(Object arg0, boolean arg1);}
+static public interface OCX{boolean invokePrim(Object arg0, char arg1);}
+static public interface OLX{boolean invokePrim(Object arg0, long arg1);}
+static public interface ODX{boolean invokePrim(Object arg0, double arg1);}
+
+static public interface OBC{char invokePrim(Object arg0, byte arg1);}
+static public interface OSC{char invokePrim(Object arg0, short arg1);}
+static public interface OIC{char invokePrim(Object arg0, int arg1);}
+static public interface OFC{char invokePrim(Object arg0, float arg1);}
+static public interface OXC{char invokePrim(Object arg0, boolean arg1);}
+static public interface OCC{char invokePrim(Object arg0, char arg1);}
+static public interface OLC{char invokePrim(Object arg0, long arg1);}
+static public interface ODC{char invokePrim(Object arg0, double arg1);}
+
+static public interface OBL{long invokePrim(Object arg0, byte arg1);}
+static public interface OSL{long invokePrim(Object arg0, short arg1);}
+static public interface OIL{long invokePrim(Object arg0, int arg1);}
+static public interface OFL{long invokePrim(Object arg0, float arg1);}
+static public interface OXL{long invokePrim(Object arg0, boolean arg1);}
+static public interface OCL{long invokePrim(Object arg0, char arg1);}
+
+static public interface OBD{double invokePrim(Object arg0, byte arg1);}
+static public interface OSD{double invokePrim(Object arg0, short arg1);}
+static public interface OID{double invokePrim(Object arg0, int arg1);}
+static public interface OFD{double invokePrim(Object arg0, float arg1);}
+static public interface OXD{double invokePrim(Object arg0, boolean arg1);}
+static public interface OCD{double invokePrim(Object arg0, char arg1);}
+
+static public interface OBO{Object invokePrim(Object arg0, byte arg1);}
+static public interface OSO{Object invokePrim(Object arg0, short arg1);}
+static public interface OIO{Object invokePrim(Object arg0, int arg1);}
+static public interface OFO{Object invokePrim(Object arg0, float arg1);}
+static public interface OXO{Object invokePrim(Object arg0, boolean arg1);}
+static public interface OCO{Object invokePrim(Object arg0, char arg1);}
+
+static public interface OBBB{byte invokePrim(Object arg, byte arg0, byte arg1);}
+static public interface OSSB{byte invokePrim(Object arg, short arg0, short arg1);}
+static public interface OIIB{byte invokePrim(Object arg, int arg0, int arg1);}
+static public interface OFFB{byte invokePrim(Object arg, float arg0, float arg1);}
+static public interface OXXB{byte invokePrim(Object arg, boolean arg0, boolean arg1);}
+static public interface OCCB{byte invokePrim(Object arg, char arg0, char arg1);}
+static public interface OLLB{byte invokePrim(Object arg, long arg0, long arg1);}
+static public interface ODDB{byte invokePrim(Object arg, double arg0, double arg1);}
+static public interface OOOB{byte invokePrim(Object arg, Object arg0, Object arg1);}
+
+static public interface OBBS{short invokePrim(Object arg, byte arg0, byte arg1);}
+static public interface OSSS{short invokePrim(Object arg, short arg0, short arg1);}
+static public interface OIIS{short invokePrim(Object arg, int arg0, int arg1);}
+static public interface OFFS{short invokePrim(Object arg, float arg0, float arg1);}
+static public interface OXXS{short invokePrim(Object arg, boolean arg0, boolean arg1);}
+static public interface OCCS{short invokePrim(Object arg, char arg0, char arg1);}
+static public interface OLLS{short invokePrim(Object arg, long arg0, long arg1);}
+static public interface ODDS{short invokePrim(Object arg, double arg0, double arg1);}
+static public interface OOOS{short invokePrim(Object arg, Object arg0, Object arg1);}
+
+static public interface OBBI{int invokePrim(Object arg, byte arg0, byte arg1);}
+static public interface OSSI{int invokePrim(Object arg, short arg0, short arg1);}
+static public interface OIII{int invokePrim(Object arg, int arg0, int arg1);}
+static public interface OFFI{int invokePrim(Object arg, float arg0, float arg1);}
+static public interface OXXI{int invokePrim(Object arg, boolean arg0, boolean arg1);}
+static public interface OCCI{int invokePrim(Object arg, char arg0, char arg1);}
+static public interface OLLI{int invokePrim(Object arg, long arg0, long arg1);}
+static public interface ODDI{int invokePrim(Object arg, double arg0, double arg1);}
+static public interface OOOI{int invokePrim(Object arg, Object arg0, Object arg1);}
+
+static public interface OBBF{float invokePrim(Object arg, byte arg0, byte arg1);}
+static public interface OSSF{float invokePrim(Object arg, short arg0, short arg1);}
+static public interface OIIF{float invokePrim(Object arg, int arg0, int arg1);}
+static public interface OFFF{float invokePrim(Object arg, float arg0, float arg1);}
+static public interface OXXF{float invokePrim(Object arg, boolean arg0, boolean arg1);}
+static public interface OCCF{float invokePrim(Object arg, char arg0, char arg1);}
+static public interface OLLF{float invokePrim(Object arg, long arg0, long arg1);}
+static public interface ODDF{float invokePrim(Object arg, double arg0, double arg1);}
+static public interface OOOF{float invokePrim(Object arg, Object arg0, Object arg1);}
+
+static public interface OBBX{boolean invokePrim(Object arg, byte arg0, byte arg1);}
+static public interface OSSX{boolean invokePrim(Object arg, short arg0, short arg1);}
+static public interface OIIX{boolean invokePrim(Object arg, int arg0, int arg1);}
+static public interface OFFX{boolean invokePrim(Object arg, float arg0, float arg1);}
+static public interface OXXX{boolean invokePrim(Object arg, boolean arg0, boolean arg1);}
+static public interface OCCX{boolean invokePrim(Object arg, char arg0, char arg1);}
+static public interface OLLX{boolean invokePrim(Object arg, long arg0, long arg1);}
+static public interface ODDX{boolean invokePrim(Object arg, double arg0, double arg1);}
+static public interface OOOX{boolean invokePrim(Object arg, Object arg0, Object arg1);}
+
+static public interface OBBC{char invokePrim(Object arg, byte arg0, byte arg1);}
+static public interface OSSC{char invokePrim(Object arg, short arg0, short arg1);}
+static public interface OIIC{char invokePrim(Object arg, int arg0, int arg1);}
+static public interface OFFC{char invokePrim(Object arg, float arg0, float arg1);}
+static public interface OXXC{char invokePrim(Object arg, boolean arg0, boolean arg1);}
+static public interface OCCC{char invokePrim(Object arg, char arg0, char arg1);}
+static public interface OLLC{char invokePrim(Object arg, long arg0, long arg1);}
+static public interface ODDC{char invokePrim(Object arg, double arg0, double arg1);}
+static public interface OOOC{char invokePrim(Object arg, Object arg0, Object arg1);}
+
+static public interface OBBL{long invokePrim(Object arg, byte arg0, byte arg1);}
+static public interface OSSL{long invokePrim(Object arg, short arg0, short arg1);}
+static public interface OIIL{long invokePrim(Object arg, int arg0, int arg1);}
+static public interface OFFL{long invokePrim(Object arg, float arg0, float arg1);}
+static public interface OXXL{long invokePrim(Object arg, boolean arg0, boolean arg1);}
+static public interface OCCL{long invokePrim(Object arg, char arg0, char arg1);}
+
+static public interface OBBD{double invokePrim(Object arg, byte arg0, byte arg1);}
+static public interface OSSD{double invokePrim(Object arg, short arg0, short arg1);}
+static public interface OIID{double invokePrim(Object arg, int arg0, int arg1);}
+static public interface OFFD{double invokePrim(Object arg, float arg0, float arg1);}
+static public interface OXXD{double invokePrim(Object arg, boolean arg0, boolean arg1);}
+static public interface OCCD{double invokePrim(Object arg, char arg0, char arg1);}
+
+static public interface OBBO{Object invokePrim(Object arg, byte arg0, byte arg1);}
+static public interface OSSO{Object invokePrim(Object arg, short arg0, short arg1);}
+static public interface OIIO{Object invokePrim(Object arg, int arg0, int arg1);}
+static public interface OFFO{Object invokePrim(Object arg, float arg0, float arg1);}
+static public interface OXXO{Object invokePrim(Object arg, boolean arg0, boolean arg1);}
+static public interface OCCO{Object invokePrim(Object arg, char arg0, char arg1);}
+
 static public interface L{long invokePrim();}
 static public interface D{double invokePrim();}
 static public interface OL{long invokePrim(Object arg0);}

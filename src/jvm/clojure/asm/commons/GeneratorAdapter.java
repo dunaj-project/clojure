@@ -909,9 +909,15 @@ public void box(final Type type){
 			dupX1();
 			swap();
 			}
+                if(boxed == BOOLEAN_TYPE) {
+		invokeStatic(boxed, new Method("valueOf",
+                                               BOOLEAN_TYPE,
+                                               new Type[]{type}));
+                } else {
 		invokeConstructor(boxed, new Method("<init>",
 		                                    Type.VOID_TYPE,
 		                                    new Type[]{type}));
+                }
 		}
 }
 

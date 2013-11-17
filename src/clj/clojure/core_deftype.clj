@@ -539,7 +539,9 @@
     `(let []
        ~(emit-deftype* name gname (vec hinted-fields) (vec interfaces) methods)
        ~(build-positional-factory gname classname fields)
-       (def ~name {:on '~classname :on-interface ~classname})
+       (def ~name {:on '~classname
+                   :on-class ~classname
+                   ::type true})
        ~name)))
 
 ;;;;;;;;;;;;;;;;;;;;;;; protocols ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -822,15 +824,18 @@
   extends?, satisfies?, extenders"
   {:added "1.2"} 
   [atype & proto+mmaps]
-  (doseq [[proto mmap] (partition 2 proto+mmaps)]
-    (when-not (protocol? proto)
-      (throw (IllegalArgumentException.
-              (str proto " is not a protocol"))))
-    (when (implements? proto atype)
-      (throw (IllegalArgumentException. 
-              (str atype " already directly implements " (:on-interface proto) " for protocol:"  
-                   (:var proto)))))
-    (-reset-methods (alter-var-root (:var proto) assoc-in [:impls atype] mmap))))
+  (let [atype (if (class? atype)
+                atype
+                (:on-class atype))]
+    (doseq [[proto mmap] (partition 2 proto+mmaps)]
+      (when-not (protocol? proto)
+        (throw (IllegalArgumentException.
+                (str proto " is not a protocol"))))
+      (when (implements? proto atype)
+        (throw (IllegalArgumentException. 
+                (str atype " already directly implements " (:on-interface proto) " for protocol:"  
+                     (:var proto)))))
+      (-reset-methods (alter-var-root (:var proto) assoc-in [:impls atype] mmap)))))
 
 (defn- emit-impl [[p fs]]
   [p (zipmap (map #(-> % first keyword) fs)

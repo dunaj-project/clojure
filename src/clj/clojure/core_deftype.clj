@@ -481,8 +481,7 @@
        ~(build-positional-factory gname classname fields)
        (def ~name {:on '~classname
                    :on-class ~classname
-                   ::type true})
-       ~name)))
+                   ::type true}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;; protocols ;;;;;;;;;;;;;;;;;;;;;;;;
 

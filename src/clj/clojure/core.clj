@@ -10,6 +10,8 @@
        :author "Rich Hickey"}
   clojure.core)
 
+(.addDefaultImports *ns*)
+
 (def unquote)
 (def unquote-splicing)
 
@@ -508,10 +510,10 @@
   {:tag String
    :added "1.0"
    :static true}
-  (^String [] "")
-  (^String [^Object x]
+  (^java.lang.String [] "")
+  (^java.lang.String [^Object x]
    (if (nil? x) "" (. x (toString))))
-  (^String [x & ys]
+  (^java.lang.String [x & ys]
      ((fn [^StringBuilder sb more]
           (if more
             (recur (. sb  (append (str (first more)))) (next more))
@@ -4546,8 +4548,8 @@
   at end (defaults to length of string), exclusive."
   {:added "1.0"
    :static true}
-  (^String [^String s start] (. s (substring start)))
-  (^String [^String s start end] (. s (substring start end))))
+  (^java.lang.String [^String s start] (. s (substring start)))
+  (^java.lang.String [^String s start end] (. s (substring start end))))
 
 (defn max-key
   "Returns the x for which (k x), a number, is greatest."
@@ -5282,7 +5284,10 @@
         ;ns-effect (clojure.core/in-ns name)
         ]
     `(do
-       (clojure.core/in-ns '~name)
+       (clojure.core/in-ns-bare '~name)
+       ~(if (.equals name 'clojure.core)
+          nil
+          `(clojure.core/reset-meta! *ns* ~(meta name)))
        (with-loading-context
         ~@(when gen-class-call (list gen-class-call))
         ~@(map process-reference references)
@@ -5295,9 +5300,14 @@
            `((~api-fn '~(vec references)
                       ~@(map #(list 'clojure.core/quote %) api-args)))))))
 
+(defn add-default-imports!
+  []
+  (.addDefaultImports *ns*))
+
 (defn init-api
   "Traditional Clojure API."
   [references & args]
+  (add-default-imports!)
   (when (and (not= (ns-name *ns*) 'clojure.core)
              (not-any? #(= :refer-clojure (first %)) references))
     (apply refer 'clojure.core args)))

@@ -16,10 +16,12 @@ import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.Map;
+import java.util.Set;
 
 public class Namespace extends AReference implements Serializable {
 final public Symbol name;
-transient final AtomicReference<IPersistentMap> mappings = new AtomicReference<IPersistentMap>();
+transient final AtomicReference<IPersistentMap> mappings = new AtomicReference<IPersistentMap>(RT.map());
 transient final AtomicReference<IPersistentMap> aliases = new AtomicReference<IPersistentMap>();
 
 final static ConcurrentHashMap<Symbol, Namespace> namespaces = new ConcurrentHashMap<Symbol, Namespace>();
@@ -31,8 +33,23 @@ public String toString(){
 Namespace(Symbol name){
 	super(name.meta());
 	this.name = name;
-	mappings.set(RT.DEFAULT_IMPORTS);
 	aliases.set(RT.map());
+}
+
+public void addDefaultImports() {
+    boolean done = false;
+    while (!done) {
+        IPersistentMap oldI = mappings.get();
+        ITransientMap newI = (ITransientMap)((IEditableCollection) RT.DEFAULT_IMPORTS).asTransient();
+        Set oes = ((Map)oldI).entrySet();
+        //        for(Map.Entry entry : (Set<Map.Entry>) oes) {
+        //            System.out.println("has " + entry.toString());
+        //        }
+        for(Map.Entry entry : (Set<Map.Entry>) oes) {
+            newI.assoc(entry.getKey(), entry.getValue());
+        }
+        done = mappings.compareAndSet(oldI, (IPersistentMap)(newI.persistent()));
+    }
 }
 
 public static ISeq all(){

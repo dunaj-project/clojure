@@ -213,6 +213,7 @@ static final public Var UNCHECKED_MATH = Var.intern(Namespace.findOrCreate(Symbo
 
 final static Symbol LOAD_FILE = Symbol.intern("load-file");
 final static Symbol IN_NAMESPACE = Symbol.intern("in-ns");
+final static Symbol IN_NAMESPACE_BARE = Symbol.intern("in-ns-bare");
 final static Symbol NAMESPACE = Symbol.intern("ns");
 static final Symbol IDENTICAL = Symbol.intern("identical?");
 final static Var CMD_LINE_ARGS = Var.intern(CLOJURE_NS, Symbol.intern("*command-line-args*"), null).setDynamic();
@@ -253,12 +254,23 @@ static final Var QNEW_VAR = Var.intern(CLOJURE_NS, Symbol.intern("new"));
 static final Var QAMP_VAR = Var.intern(CLOJURE_NS, Symbol.intern("&"));
 
 final static Var IN_NS_VAR = Var.intern(CLOJURE_NS, Symbol.intern("in-ns"), F);
+final static Var IN_NS_BARE_VAR = Var.intern(CLOJURE_NS, Symbol.intern("in-ns"), F);
 final static Var NS_VAR = Var.intern(CLOJURE_NS, Symbol.intern("ns"), F);
 final static Var FN_LOADER_VAR = Var.intern(CLOJURE_NS, Symbol.intern("*fn-loader*"), null).setDynamic();
 static final Var PRINT_INITIALIZED = Var.intern(CLOJURE_NS, Symbol.intern("print-initialized"));
 static final Var PR_ON = Var.intern(CLOJURE_NS, Symbol.intern("pr-on"));
 //final static Var IMPORTS = Var.intern(CLOJURE_NS, Symbol.intern("*imports*"), DEFAULT_IMPORTS);
 final static IFn inNamespace = new AFn(){
+	public Object invoke(Object arg1) {
+		Symbol nsname = (Symbol) arg1;
+		Namespace ns = Namespace.findOrCreate(nsname);
+                ns.addDefaultImports();
+		CURRENT_NS.set(ns);
+		return ns;
+	}
+};
+
+final static IFn inNamespaceBare = new AFn(){
 	public Object invoke(Object arg1) {
 		Symbol nsname = (Symbol) arg1;
 		Namespace ns = Namespace.findOrCreate(nsname);
@@ -334,6 +346,7 @@ static{
 	nv.setMacro();
 	Var v;
 	v = Var.intern(CLOJURE_NS, IN_NAMESPACE, inNamespace);
+	v = Var.intern(CLOJURE_NS, IN_NAMESPACE_BARE, inNamespaceBare);
 	v.setMeta(map(DOC_KEY, "Sets *ns* to the namespace named by the symbol, creating it if needed.",
 	              arglistskw, list(vector(namesym))));
 	v = Var.intern(CLOJURE_NS, LOAD_FILE,

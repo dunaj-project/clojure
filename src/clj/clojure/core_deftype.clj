@@ -43,6 +43,30 @@
       (recur (assoc opts k v) rs)
       [opts s])))
 
+(defn- translate-name [proto spec]
+  (if (and (not (class? proto))
+           (not (nil? proto))
+           (var? (resolve proto))
+           (:clojure.core/protocol (deref (resolve proto))))
+    (let [tr-map (:method-map (deref (resolve proto)))
+          trk (get tr-map (keyword (name (first spec))))]
+      (assert trk (str "Translation of method " (first spec)
+                       " not found in protocol " proto
+                       " which contanis following data "
+                       (deref (resolve proto))))
+      (cons (symbol (name trk))
+            (next spec)))
+    spec))
+
+(defn- parse-impls-translated [specs]
+  (loop [ret {} s specs]
+    (if (seq s)
+      (recur (assoc ret (first s)
+                    (map #(translate-name (first s) %)
+                         (take-while seq? (next s))))
+             (drop-while seq? (next s)))
+      ret)))
+
 (defn- parse-impls [specs]
   (loop [ret {} s specs]
     (if (seq s)
@@ -52,10 +76,13 @@
 
 (defn- parse-opts+specs [opts+specs]
   (let [[opts specs] (parse-opts opts+specs)
-        impls (parse-impls specs)
-        interfaces (-> (map #(if (var? (resolve %)) 
-                               (:on (deref (resolve %)))
-                               %)
+        impls (parse-impls-translated specs)
+        interfaces (-> (mapcat #(if (var? (resolve %))
+                                  (let [p (deref (resolve %))]
+                                    (if (:marker p)
+                                      [(:on p) (:marker p)]
+                                      [(:on p)]))
+                                  [%])
                             (keys impls))
                        set
                        (disj 'Object 'java.lang.Object)
@@ -513,7 +540,9 @@
      (if (.isAssignableFrom a b) b a)))
 
 (defn find-protocol-impl [protocol x]
-  (if (instance? (:on-interface protocol) x)
+  (if (and (instance? (:on-interface protocol) x)
+           (or (not (:marker-interface protocol))
+               (instance? (:marker-interface protocol) x)))
     x
     (let [c (class x)
           impl #(get (:impls protocol) %)]
@@ -672,6 +701,71 @@
      (-reset-methods ~name)
      '~name)))
 
+(defn- emit-protocol2 [name opts+sigs]
+  (let [iname (:on-interface (meta name))
+        imarker (symbol (str (munge (namespace-munge *ns*)) "." (munge name) (munge "MARKER")))
+        [opts sigs]
+        (loop [opts {:on (list 'clojure.core/quote iname) :on-interface iname} sigs opts+sigs]
+          (condp #(%1 %2) (first sigs) 
+            string? (recur (assoc opts :doc (first sigs)) (next sigs))
+            keyword? (recur (assoc opts (first sigs) (second sigs)) (nnext sigs))
+            [opts sigs]))
+        sigs (when sigs
+               (reduce1 (fn [m s]
+                          (let [name-meta (meta (first s))
+                                mname (with-meta (first s) nil)
+                                [arglists doc]
+                                (loop [as [] rs (rest s)]
+                                  (if (vector? (first rs))
+                                    (recur (conj as (first rs)) (next rs))
+                                    [(seq as) (first rs)]))
+                                doc (or doc (get name-meta :doc))]
+                            (when (some #{0} (map count arglists))
+                              (throw (IllegalArgumentException. (str "Definition of function " mname " in protocol " name " must take at least one arg."))))
+                            (when (m (keyword mname))
+                              (throw (IllegalArgumentException. (str "Function " mname " in protocol " name " was redefined. Specify all arities in single definition."))))
+                            (assoc m (keyword mname)
+                                   (merge name-meta
+                                          {:name (vary-meta mname assoc :doc doc :arglists arglists)
+                                           :arglists arglists
+                                           :doc doc}))))
+                        {} sigs))
+        meths (mapcat (fn [sig]
+                        (let [m (munge (:name sig))]
+                          (map #(vector m (vec (repeat (dec (count %))'Object)) 'Object) 
+                               (:arglists sig))))
+                      (vals sigs))]
+  `(do
+     (defonce ~name {})
+     (gen-interface :name ~imarker :methods ())
+     (alter-meta! (var ~name) assoc :doc ~(:doc opts))
+     (alter-meta! (var ~name) merge ~(meta name))
+     ~(when sigs
+        `(#'assert-same-protocol (var ~name) '~(map :name (vals sigs))))
+     (alter-var-root (var ~name) merge 
+                     (assoc ~opts
+                       ::protocol true
+                       :marker '~imarker
+                       :marker-interface ~imarker
+                       :sigs '~sigs 
+                       :var (var ~name)
+                       :method-map 
+                         ~(and (:on opts)
+                               (apply hash-map 
+                                      (mapcat 
+                                       (fn [s] 
+                                         [(keyword (:name s)) (keyword (or (:on s) (:name s)))])
+                                       (vals sigs))))
+                       :method-builders 
+                        ~(apply hash-map 
+                                (mapcat 
+                                 (fn [s]
+                                   [`(intern *ns* (with-meta '~(:name s) (merge '~s {:protocol (var ~name)})))
+                                    (emit-method-builder (:on-interface opts) (:name s) (:on s) (:arglists s))])
+                                 (vals sigs)))))
+     (-reset-methods ~name)
+     '~name)))
+
 (defmacro defprotocol 
   "A protocol is a named set of named methods and their signatures:
   (defprotocol AProtocolName
@@ -726,6 +820,12 @@
   [name & opts+sigs]
   (emit-protocol name opts+sigs))
 
+(defmacro defprotocol2
+  "Like defprotocol but parasites on existing interface."
+  {:added "1.2"} 
+  [name & opts+sigs]
+  (emit-protocol2 name opts+sigs))
+
 (defn extend 
   "Implementations of protocol methods can be provided using the extend construct:
 
@@ -770,6 +870,9 @@
       (when-not (protocol? proto)
         (throw (IllegalArgumentException.
                 (str proto " is not a protocol"))))
+      (when (:marker proto)
+        (println (str "Warning: " atype
+                      " class is extending parasite protocol " (:var proto))))
       (when (implements? proto atype)
         (throw (IllegalArgumentException. 
                 (str atype " already directly implements " (:on-interface proto) " for protocol:"  

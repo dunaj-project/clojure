@@ -544,7 +544,7 @@
            (or (not (:marker-interface protocol))
                (instance? (:marker-interface protocol) x)
                (some #(instance? % x) (:marker-types protocol))))
-    x
+    (or x true)
     (let [c (class x)
           impl #(get (:impls protocol) %)]
       (or (impl c)
@@ -895,7 +895,10 @@
              (map #(cons `fn (drop 1 %)) fs))])
 
 (defn- emit-hinted-impl [c [p fs]]
-  (let [hint (fn [specs]
+  (let [c (if (class? c)
+            c
+            (:on-class c))
+        hint (fn [specs]
                (let [specs (if (vector? (first specs)) 
                                         (list specs) 
                                         specs)]

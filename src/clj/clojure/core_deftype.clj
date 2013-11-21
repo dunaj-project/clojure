@@ -542,7 +542,8 @@
 (defn find-protocol-impl [protocol x]
   (if (and (instance? (:on-interface protocol) x)
            (or (not (:marker-interface protocol))
-               (instance? (:marker-interface protocol) x)))
+               (instance? (:marker-interface protocol) x)
+               (some #(instance? % x) (:marker-types protocol))))
     x
     (let [c (class x)
           impl #(get (:impls protocol) %)]
@@ -747,6 +748,7 @@
                        ::protocol true
                        :marker '~imarker
                        :marker-interface ~imarker
+                       :marker-types #{}
                        :sigs '~sigs 
                        :var (var ~name)
                        :method-map 
@@ -865,19 +867,28 @@
   [atype & proto+mmaps]
   (let [atype (if (class? atype)
                 atype
-                (:on-class atype))]
+                (:on-class atype))
+        vac (if (class? atype)
+              atype
+              (:var atype))]
     (doseq [[proto mmap] (partition 2 proto+mmaps)]
       (when-not (protocol? proto)
         (throw (IllegalArgumentException.
                 (str proto " is not a protocol"))))
-      (when (:marker proto)
-        (println (str "Warning: " atype
+      (when (and (:marker proto) (not (empty? mmap)))
+        (println (str "Warning: " vac
                       " class is extending parasite protocol " (:var proto))))
-      (when (implements? proto atype)
+      (when (and (not (:marker proto)) (implements? proto atype))
         (throw (IllegalArgumentException. 
-                (str atype " already directly implements " (:on-interface proto) " for protocol:"  
+                (str vac " already directly implements " (:on-interface proto) " for protocol:"  
                      (:var proto)))))
-      (-reset-methods (alter-var-root (:var proto) assoc-in [:impls atype] mmap)))))
+      (if-not (implements? proto atype)
+        (-reset-methods (alter-var-root (:var proto) assoc-in [:impls atype] mmap))
+        (if (empty? mmap)
+          (alter-var-root (:var proto) update-in [:marker-types] conj atype)
+          (throw (IllegalArgumentException. 
+                  (str vac " already directly implements " (:on-interface proto) " for marker protocol:"  
+                       (:var proto) ". Maybe you wanted to just mark the type?"))))))))
 
 (defn- emit-impl [[p fs]]
   [p (zipmap (map #(-> % first keyword) fs)

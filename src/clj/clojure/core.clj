@@ -487,21 +487,21 @@
   {:tag Boolean,
    :added "1.0"
    :static true}
-  [x] (clojure.lang.Util/identical x false))
+  ^boolean [x] (clojure.lang.Util/identical x false))
 
 (defn true?
   "Returns true if x is the value true, false otherwise."
   {:tag Boolean,
    :added "1.0"
    :static true}
-  [x] (clojure.lang.Util/identical x true))
+  ^boolean [x] (clojure.lang.Util/identical x true))
 
 (defn not
   "Returns true if x is logical false, false otherwise."
   {:tag Boolean
    :added "1.0"
    :static true}
-  [x] (if x false true))
+  ^boolean [x] (if x false true))
 
 (defn str
   "With no args, returns the empty string. With one arg x, returns

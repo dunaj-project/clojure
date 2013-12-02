@@ -10,6 +10,24 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;; definterface ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defonce ^:private host-lock #{})
+
+(defn host-lock!
+  [e]
+  (alter-var-root #'host-lock conj e))
+
+(defn ^:private host-locked?
+  [e]
+  (contains? host-lock e))
+
+(defn ^:private assert-host-lock
+  [& entities]
+  (doseq [e entities]
+    (assert (not (host-locked? e))
+            (str "Due to the host optimization, "
+                 "following interface/class/type/protocol"
+                 "cannot be extended: " e))))
+
 (defn namespace-munge
   "Convert a Clojure namespace name to a legal Java package name."
   {:added "1.2"}
@@ -77,6 +95,7 @@
 (defn- parse-opts+specs [opts+specs]
   (let [[opts specs] (parse-opts opts+specs)
         impls (parse-impls-translated specs)
+        _ (apply assert-host-lock (keys impls))
         interfaces (-> (mapcat #(if (var? (resolve %))
                                   (let [p (deref (resolve %))]
                                     (if (:marker p)
@@ -542,6 +561,7 @@
 (defn find-protocol-impl [protocol x]
   (if (and (instance? (:on-interface protocol) x)
            (or (not (:marker-interface protocol))
+               (:marker-soft protocol)
                (instance? (:marker-interface protocol) x)
                (some #(instance? % x) (:marker-types protocol))))
     (or x true)
@@ -704,6 +724,7 @@
 
 (defn- emit-protocol2 [name opts+sigs]
   (let [iname (:on-interface (meta name))
+        soft-marker? (boolean (:soft (meta name)))
         imarker (symbol (str (munge (namespace-munge *ns*)) "." (munge name) (munge "MARKER")))
         [opts sigs]
         (loop [opts {:on (list 'clojure.core/quote iname) :on-interface iname} sigs opts+sigs]
@@ -749,6 +770,7 @@
                        :marker '~imarker
                        :marker-interface ~imarker
                        :marker-types #{}
+                       :marker-soft ~soft-marker?
                        :sigs '~sigs 
                        :var (var ~name)
                        :method-map 
@@ -865,13 +887,16 @@
   extends?, satisfies?, extenders"
   {:added "1.2"} 
   [atype & proto+mmaps]
-  (let [atype (if (class? atype)
+  (let [_ (assert-host-lock atype)
+        atype (if (class? atype)
                 atype
                 (:on-class atype))
+        _ (assert-host-lock atype)
         vac (if (class? atype)
               atype
               (:var atype))]
     (doseq [[proto mmap] (partition 2 proto+mmaps)]
+      (assert-host-lock proto)        
       (when-not (protocol? proto)
         (throw (IllegalArgumentException.
                 (str proto " is not a protocol"))))

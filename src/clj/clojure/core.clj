@@ -419,7 +419,7 @@
    :added "1.0"
    :static true
    :inline (fn [x] (list 'clojure.lang.Util/identical x nil))}
-  [x] (clojure.lang.Util/identical x nil))
+  ^boolean [x] (clojure.lang.Util/identical x nil))
 
 (def
 
@@ -728,10 +728,11 @@
 
 (defn identical?
   "Tests if 2 arguments are the same object"
-  {:inline (fn [x y] `(. clojure.lang.Util identical ~x ~y))
+  {:tag Boolean
+   :inline (fn [x y] `(. clojure.lang.Util identical ~x ~y))
    :inline-arities #{2}
    :added "1.0"}
-  ([x y] (clojure.lang.Util/identical x y)))
+  (^boolean [x y] (clojure.lang.Util/identical x y)))
 
 ;equiv-based
 (defn =
@@ -740,11 +741,12 @@
   numbers and collections in a type-independent manner.  Clojure's immutable data
   structures define equals() (and thus =) as a value, not an identity,
   comparison."
-  {:inline (fn [x y] `(. clojure.lang.Util equiv ~x ~y))
+  {:tag Boolean
+   :inline (fn [x y] `(. clojure.lang.Util equiv ~x ~y))
    :inline-arities #{2}
    :added "1.0"}
-  ([x] true)
-  ([x y] (clojure.lang.Util/equiv x y))
+  (^boolean [x] true)
+  (^boolean [x y] (clojure.lang.Util/equiv x y))
   ([x y & more]
    (if (clojure.lang.Util/equiv x y)
      (if (next more)
@@ -775,8 +777,8 @@
   {:tag Boolean
    :added "1.0"
    :static true}
-  ([x] false)
-  ([x y] (not (= x y)))
+  (^boolean [x] false)
+  (^boolean [x y] (not (= x y)))
   ([x y & more]
    (not (apply = x y more))))
 
@@ -820,10 +822,10 @@
 ;;;;;;;;;;;;;;;;;;; sequence fns  ;;;;;;;;;;;;;;;;;;;;;;;
 (defn zero?
   "Returns true if num is zero, else false"
-  {
+  {:tag Boolean
    :inline (fn [x] `(. clojure.lang.Numbers (isZero ~x)))
    :added "1.0"}
-  [x] (. clojure.lang.Numbers (isZero x)))
+  ^boolean [x] (. clojure.lang.Numbers (isZero x)))
 
 (defn count
   "Returns the number of items in the collection. (count nil) returns
@@ -854,11 +856,12 @@
 (defn <
   "Returns non-nil if nums are in monotonically increasing order,
   otherwise false."
-  {:inline (fn [x y] `(. clojure.lang.Numbers (lt ~x ~y)))
+  {:tag Boolean
+   :inline (fn [x y] `(. clojure.lang.Numbers (lt ~x ~y)))
    :inline-arities #{2}
    :added "1.0"}
-  ([x] true)
-  ([x y] (. clojure.lang.Numbers (lt x y)))
+  (^boolean [x] true)
+  (^boolean [x y] (. clojure.lang.Numbers (lt x y)))
   ([x y & more]
    (if (< x y)
      (if (next more)
@@ -1009,11 +1012,12 @@
 (defn <=
   "Returns non-nil if nums are in monotonically non-decreasing order,
   otherwise false."
-  {:inline (fn [x y] `(. clojure.lang.Numbers (lte ~x ~y)))
+  {:tag Boolean
+   :inline (fn [x y] `(. clojure.lang.Numbers (lte ~x ~y)))
    :inline-arities #{2}
    :added "1.0"}
-  ([x] true)
-  ([x y] (. clojure.lang.Numbers (lte x y)))
+  (^boolean [x] true)
+  (^boolean [x y] (. clojure.lang.Numbers (lte x y)))
   ([x y & more]
    (if (<= x y)
      (if (next more)
@@ -1024,11 +1028,12 @@
 (defn >
   "Returns non-nil if nums are in monotonically decreasing order,
   otherwise false."
-  {:inline (fn [x y] `(. clojure.lang.Numbers (gt ~x ~y)))
+  {:tag Boolean
+   :inline (fn [x y] `(. clojure.lang.Numbers (gt ~x ~y)))
    :inline-arities #{2}
    :added "1.0"}
-  ([x] true)
-  ([x y] (. clojure.lang.Numbers (gt x y)))
+  (^boolean [x] true)
+  (^boolean [x y] (. clojure.lang.Numbers (gt x y)))
   ([x y & more]
    (if (> x y)
      (if (next more)
@@ -1039,11 +1044,12 @@
 (defn >=
   "Returns non-nil if nums are in monotonically non-increasing order,
   otherwise false."
-  {:inline (fn [x y] `(. clojure.lang.Numbers (gte ~x ~y)))
+  {:tag Boolean
+   :inline (fn [x y] `(. clojure.lang.Numbers (gte ~x ~y)))
    :inline-arities #{2}
    :added "1.0"}
-  ([x] true)
-  ([x y] (. clojure.lang.Numbers (gte x y)))
+  (^boolean [x] true)
+  (^boolean [x y] (. clojure.lang.Numbers (gte x y)))
   ([x y & more]
    (if (>= x y)
      (if (next more)
@@ -1054,11 +1060,12 @@
 (defn ==
   "Returns non-nil if nums all have the equivalent
   value (type-independent), otherwise false"
-  {:inline (fn [x y] `(. clojure.lang.Numbers (equiv ~x ~y)))
+  {:tag Boolean
+   :inline (fn [x y] `(. clojure.lang.Numbers (equiv ~x ~y)))
    :inline-arities #{2}
    :added "1.0"}
-  ([x] true)
-  ([x y] (. clojure.lang.Numbers (equiv x y)))
+  (^boolean [x] true)
+  (^boolean [x y] (. clojure.lang.Numbers (equiv x y)))
   ([x y & more]
    (if (== x y)
      (if (next more)
@@ -1200,17 +1207,17 @@
 
 (defn pos?
   "Returns true if num is greater than zero, else false"
-  {
+  {:tag Boolean
    :inline (fn [x] `(. clojure.lang.Numbers (isPos ~x)))
    :added "1.0"}
-  [x] (. clojure.lang.Numbers (isPos x)))
+  ^boolean [x] (. clojure.lang.Numbers (isPos x)))
 
 (defn neg?
   "Returns true if num is less than zero, else false"
-  {
+  {:tag Boolean
    :inline (fn [x] `(. clojure.lang.Numbers (isNeg ~x)))
    :added "1.0"}
-  [x] (. clojure.lang.Numbers (isNeg x)))
+  ^boolean [x] (. clojure.lang.Numbers (isNeg x)))
 
 (defn quot
   "quot[ient] of dividing numerator by denominator."
@@ -1321,9 +1328,10 @@
 
 (defn integer?
   "Returns true if n is an integer"
-  {:added "1.0"
+  {:tag Boolean
+   :added "1.0"
    :static true}
-  [n]
+  ^boolean [n]
   (or (instance? Integer n)
       (instance? Long n)
       (instance? clojure.lang.BigInt n)
@@ -1333,17 +1341,19 @@
 
 (defn even?
   "Returns true if n is even, throws an exception if n is not an integer"
-  {:added "1.0"
+  {:tag Boolean
+   :added "1.0"
    :static true}
-   [n] (if (integer? n)
+  ^boolean [n] (if (integer? n)
         (zero? (bit-and (clojure.lang.RT/uncheckedLongCast n) 1))
         (throw (IllegalArgumentException. (str "Argument must be an integer: " n)))))
 
 (defn odd?
   "Returns true if n is odd, throws an exception if n is not an integer"
-  {:added "1.0"
+  {:tag Boolean
+   :added "1.0"
    :static true}
-  [n] (not (even? n)))
+  ^boolean [n] (not (even? n)))
 
 
 ;;
@@ -3237,9 +3247,10 @@
 
 (defn number?
   "Returns true if x is a Number"
-  {:added "1.0"
+  {:tag Boolean
+   :added "1.0"
    :static true}
-  [x]
+  ^boolean [x]
   (instance? Number x))
 
 (defn mod
@@ -3276,23 +3287,26 @@
 
 (defn decimal?
   "Returns true if n is a BigDecimal"
-  {:added "1.0"
+  {:tag Boolean
+   :added "1.0"
    :static true}
-  [n] (instance? BigDecimal n))
+  ^boolean [n] (instance? BigDecimal n))
 
 (defn float?
   "Returns true if n is a floating point number"
-  {:added "1.0"
+  {:tag Boolean
+   :added "1.0"
    :static true}
-  [n]
+  ^boolean [n]
   (or (instance? Double n)
       (instance? Float n)))
 
 (defn rational? 
   "Returns true if n is a rational number"
-  {:added "1.0"
+  {:tag Boolean
+   :added "1.0"
    :static true}
-  [n]
+  ^boolean [n]
   (or (integer? n) (ratio? n) (decimal? n)))
 
 (defn bigint
@@ -5158,8 +5172,8 @@
   {:tag Boolean
    :added "1.0"
    :static true}
-  ([x] true)
-  ([x y] (not (= x y)))
+  (^boolean [x] true)
+  (^boolean [x y] (not (= x y)))
   ([x y & more]
    (if (not= x y)
      (loop [s #{x y} [x & etc :as xs] more]

@@ -1326,6 +1326,12 @@
    :added "1.0"}
   [x n] (. clojure.lang.Numbers shiftRight x n))
 
+(defn unsigned-bit-shift-right
+  "Bitwise shift right, without sign-extension."
+  {:inline (fn [x n] `(. clojure.lang.Numbers (unsignedShiftRight ~x ~n)))
+   :added "1.6"}
+  [x n] (. clojure.lang.Numbers unsignedShiftRight x n))
+
 (defn integer?
   "Returns true if n is an integer"
   {:tag Boolean
@@ -1987,8 +1993,7 @@
   [] (clojure.lang.Agent/releasePendingSends))
 
 (defn add-watch
-  "Alpha - subject to change.
-  Adds a watch function to an agent/atom/var/ref reference. The watch
+  "Adds a watch function to an agent/atom/var/ref reference. The watch
   fn must be a fn of 4 args: a key, the reference, its old-state, its
   new-state. Whenever the reference's state might have been changed,
   any registered watches will have their functions called. The watch fn
@@ -2006,8 +2011,7 @@
   [^clojure.lang.IRef reference key fn] (.addWatch reference key fn))
 
 (defn remove-watch
-  "Alpha - subject to change.
-  Removes a watch (set by add-watch) from a reference"
+  "Removes a watch (set by add-watch) from a reference"
   {:added "1.0"
    :static true}
   [^clojure.lang.IRef reference key]
@@ -3020,16 +3024,14 @@
 
 ;;;;;;;;;;;;;;;;;;;;; editable collections ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn transient 
-  "Alpha - subject to change.
-  Returns a new, transient version of the collection, in constant time."
+  "Returns a new, transient version of the collection, in constant time."
   {:added "1.1"
    :static true}
   [^clojure.lang.IEditableCollection coll] 
   (.asTransient coll))
 
 (defn persistent! 
-  "Alpha - subject to change.
-  Returns a new, persistent version of the transient collection, in
+  "Returns a new, persistent version of the transient collection, in
   constant time. The transient collection cannot be used after this
   call, any such use will throw an exception."
   {:added "1.1"
@@ -3038,8 +3040,7 @@
   (.persistent coll))
 
 (defn conj!
-  "Alpha - subject to change.
-  Adds x to the transient collection, and return coll. The 'addition'
+  "Adds x to the transient collection, and return coll. The 'addition'
   may happen at different 'places' depending on the concrete type."
   {:added "1.1"
    :static true}
@@ -3047,8 +3048,7 @@
   (.conj coll x))
 
 (defn assoc!
-  "Alpha - subject to change.
-  When applied to a transient map, adds mapping of key(s) to
+  "When applied to a transient map, adds mapping of key(s) to
   val(s). When applied to a transient vector, sets the val at index.
   Note - index must be <= (count vector). Returns coll."
   {:added "1.1"
@@ -3061,8 +3061,7 @@
        ret))))
 
 (defn dissoc!
-  "Alpha - subject to change.
-  Returns a transient map that doesn't contain a mapping for key(s)."
+  "Returns a transient map that doesn't contain a mapping for key(s)."
   {:added "1.1"
    :static true}
   ([^clojure.lang.ITransientMap map key] (.without map key))
@@ -3073,8 +3072,7 @@
        ret))))
 
 (defn pop!
-  "Alpha - subject to change.
-  Removes the last item from a transient vector. If
+  "Removes the last item from a transient vector. If
   the collection is empty, throws an exception. Returns coll"
   {:added "1.1"
    :static true}
@@ -3082,8 +3080,7 @@
   (.pop coll)) 
 
 (defn disj!
-  "Alpha - subject to change.
-  disj[oin]. Returns a transient set of the same (hashed/sorted) type, that
+  "disj[oin]. Returns a transient set of the same (hashed/sorted) type, that
   does not contain key(s)."
   {:added "1.1"
    :static true}
@@ -4377,8 +4374,7 @@
 
 (import clojure.lang.ExceptionInfo clojure.lang.IExceptionInfo)
 (defn ex-info
-  "Alpha - subject to change.
-   Create an instance of ExceptionInfo, a RuntimeException subclass
+  "Create an instance of ExceptionInfo, a RuntimeException subclass
    that carries a map of additional data."
   {:added "1.4"}
   ([msg map]
@@ -4387,8 +4383,7 @@
      (ExceptionInfo. msg map cause)))
 
 (defn ex-data
-  "Alpha - subject to change.
-   Returns exception data (a map) if ex is an IExceptionInfo.
+  "Returns exception data (a map) if ex is an IExceptionInfo.
    Otherwise returns nil."
   {:added "1.4"}
   [ex]
@@ -5368,7 +5363,7 @@
   *loading-verbosely* false)
 
 (defn- throw-if
-  "Throws an exception with a message if pred is true"
+  "Throws a CompilerException with a message if pred is true"
   [pred fmt & args]
   (when pred
     (let [^String message (apply format fmt args)
@@ -5377,7 +5372,11 @@
           boring? #(not= (.getMethodName ^StackTraceElement %) "doInvoke")
           trace (into-array (drop 2 (drop-while boring? raw-trace)))]
       (.setStackTrace exception trace)
-      (throw exception))))
+      (throw (clojure.lang.Compiler$CompilerException.
+              *file*
+              (.deref clojure.lang.Compiler/LINE)
+              (.deref clojure.lang.Compiler/COLUMN)
+              exception)))))
 
 (defn- libspec?
   "Returns true if x is a libspec"
@@ -5441,7 +5440,8 @@
   "Loads a lib with options"
   [prefix lib & options]
   (throw-if (and prefix (pos? (.indexOf (name lib) (int \.))))
-            "lib names inside prefix lists must not contain periods")
+            "Found lib name '%s' containing period with prefix '%s'.  lib names inside prefix lists must not contain periods"
+            (name lib) prefix)
   (let [lib (if prefix (symbol (str prefix \. lib)) lib)
         opts (apply hash-map options)
         {:keys [as reload reload-all require use verbose]} opts
@@ -5511,7 +5511,7 @@
     (let [pending (map #(if (= % path) (str "[ " % " ]") %)
                        (cons path *pending-paths*))
           chain (apply str (interpose "->" pending))]
-      (throw (Exception. (str "Cyclic load dependency: " chain))))))
+      (throw-if true "Cyclic load dependency: %s" chain))))
 
 ;; Public
 
@@ -6512,8 +6512,7 @@
          "-SNAPSHOT")))
 
 (defn promise
-  "Alpha - subject to change.
-  Returns a promise object that can be read with deref/@, and set,
+  "Returns a promise object that can be read with deref/@, and set,
   once only, with deliver. Calls to deref/@ prior to delivery will
   block, unless the variant of deref with timeout is used. All
   subsequent derefs will return the same delivered value without
@@ -6544,8 +6543,7 @@
         this)))))
 
 (defn deliver
-  "Alpha - subject to change.
-  Delivers the supplied value to the promise, releasing any pending
+  "Delivers the supplied value to the promise, releasing any pending
   derefs. A subsequent call to deliver on a promise will have no effect."
   {:added "1.1"
    :static true}

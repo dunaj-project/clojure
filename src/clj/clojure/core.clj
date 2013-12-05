@@ -1819,7 +1819,7 @@
   {:added "1.1"
    :static true}
   [binding-map f & args]
-  (let [binding-map (if (map? binding-map?)
+  (let [binding-map (if (map? binding-map)
                       binding-map
                       (apply hash-map binding-map))]
     (push-thread-bindings binding-map)

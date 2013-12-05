@@ -1819,11 +1819,14 @@
   {:added "1.1"
    :static true}
   [binding-map f & args]
-  (push-thread-bindings binding-map)
-  (try
-    (apply f args)
-    (finally
-      (pop-thread-bindings))))
+  (let [binding-map (if (map? binding-map?)
+                      binding-map
+                      (apply hash-map binding-map))]
+    (push-thread-bindings binding-map)
+    (try
+      (apply f args)
+      (finally
+        (pop-thread-bindings)))))
 
 (defmacro with-bindings
   "Takes a map of Var/value pairs. Installs for the given Vars the associated
@@ -3197,10 +3200,10 @@
 
 (defn boolean
   "Coerce to boolean"
-  {
+  {:tag Boolean
    :inline (fn  [x] `(. clojure.lang.RT (booleanCast ~x)))
    :added "1.0"}
-  [x] (clojure.lang.RT/booleanCast x))
+  ^boolean [x] (clojure.lang.RT/booleanCast x))
 
 (defn unchecked-byte
   "Coerce to byte. Subject to rounding or truncation."
@@ -4490,16 +4493,18 @@
 (defn rand
   "Returns a random floating point number between 0 (inclusive) and
   n (default 1) (exclusive)."
-  {:added "1.0"
+  {:tag Double
+   :added "1.0"
    :static true}
-  ([] (. Math (random)))
-  ([n] (* n (rand))))
+  (^double [] (. Math (random)))
+  (^double [n] (* n (rand))))
 
 (defn rand-int
   "Returns a random integer between 0 (inclusive) and n (exclusive)."
-  {:added "1.0"
+  {:tag Integer
+   :added "1.0"
    :static true}
-  [n] (int (rand n)))
+  ^int [n] (int (rand n)))
 
 (defmacro defn-
   "same as defn, yielding non-public def"
@@ -6223,10 +6228,12 @@
 
 (defn reduced?
   "Returns true if x is the result of a call to reduced"
-  {:inline (fn [x] `(clojure.lang.RT/isReduced ~x ))
+  {:tag Boolean
+   :inline (fn [x] `(clojure.lang.RT/isReduced ~x ))
    :inline-arities #{1}
    :added "1.5"}
-  ([x] (clojure.lang.RT/isReduced x)))
+  ^boolean [x]
+  (clojure.lang.RT/isReduced x))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; helper files ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (alter-meta! (find-ns 'clojure.core) assoc :doc "Fundamental library of the Clojure language")
@@ -6848,8 +6855,9 @@
 
 (defn realized?
   "Returns true if a value has been produced for a promise, delay, future or lazy sequence."
-  {:added "1.3"}
-  [^clojure.lang.IPending x] (.isRealized x))
+  {:tag Boolean
+   :added "1.3"}
+  ^boolean [^clojure.lang.IPending x] (.isRealized x))
 
 (defmacro cond->
   "Takes an expression and a set of test/form pairs. Threads expr (via ->)

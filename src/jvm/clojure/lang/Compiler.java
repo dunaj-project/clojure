@@ -2013,7 +2013,7 @@ static class NilExpr extends LiteralExpr{
 
 final static NilExpr NIL_EXPR = new NilExpr();
 
-static class BooleanExpr extends LiteralExpr{
+static class BooleanExpr extends LiteralExpr implements MaybePrimitiveExpr {
 	public final boolean val;
 
 
@@ -2036,12 +2036,20 @@ static class BooleanExpr extends LiteralExpr{
 			}
 	}
 
+	public boolean canEmitPrimitive(){
+		return true;
+	}
+
+	public void emitUnboxed(C context, ObjExpr objx, GeneratorAdapter gen){
+            gen.push(val);
+	}
+
 	public boolean hasJavaClass(){
 		return true;
 	}
 
 	public Class getJavaClass() {
-		return Boolean.class;
+		return boolean.class;
 	}
 }
 
@@ -6452,7 +6460,7 @@ public static class RecurExpr implements Expr, MaybePrimitiveExpr{
 						((MaybePrimitiveExpr) arg).emitUnboxed(C.EXPRESSION, objx, gen);
 						gen.visitInsn(D2F);						
 						}
-					else
+					else 
 						{
 //						if(true)//RT.booleanCast(RT.WARN_ON_REFLECTION.deref()))
 							throw new IllegalArgumentException
@@ -6548,6 +6556,9 @@ public static class RecurExpr implements Expr, MaybePrimitiveExpr{
 							|| pc == float.class))
 							mismatch = true;
 						}
+					else if(primc != pc) {
+                                                mismatch = true;
+                                        }
 					if(mismatch)
 						{
 						lb.recurMistmatch = true;

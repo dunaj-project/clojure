@@ -916,9 +916,8 @@
              (map #(cons `fn (drop 1 %)) fs))])
 
 (defn- emit-hinted-impl [c [p fs]]
-  (let [c (if (class? c)
-            c
-            (:on-class c))
+  (let [ce (eval c)
+        c (if (class? ce) c (:on ce))
         hint (fn [specs]
                (let [specs (if (vector? (first specs)) 
                                         (list specs) 

@@ -13,8 +13,12 @@
 (defonce ^:private host-lock #{})
 
 (defn host-lock!
-  [e]
-  (alter-var-root #'host-lock conj e))
+  ([e]
+     (alter-var-root #'host-lock conj e))
+  ([e & more]
+     (host-lock! e)
+     (doseq [x more]
+       (host-lock! x))))
 
 (defn ^:private host-locked?
   [e]
@@ -594,8 +598,9 @@
 
 (defn satisfies? 
   "Returns true if x satisfies the protocol"
-  {:added "1.2"}
-  [protocol x]
+  {:added "1.2"
+   :tag Boolean}
+  ^boolean [protocol x]
   (boolean (find-protocol-impl protocol x)))
 
 (defn -cache-protocol-fn [^clojure.lang.AFunction pf x ^Class c ^clojure.lang.IFn interf]

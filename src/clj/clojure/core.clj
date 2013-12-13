@@ -138,8 +138,10 @@
  ^{:arglists '([^Class c x])
    :doc "Evaluates x and tests if it is an instance of the class
     c. Returns true or false"
+   :inline (fn [c x] (list 'clojure.lang.Util/isInstance c x))
+   :tag Boolean
    :added "1.0"}
- instance? (fn instance? [^Class c x] (. c (isInstance x))))
+ instance? (fn instance? ^boolean [^Class c x] (. c (isInstance x))))
 
 (def
  ^{:arglists '([x])
@@ -486,6 +488,7 @@
   "Returns true if x is the value false, false otherwise."
   {:tag Boolean,
    :added "1.0"
+   :inline (fn [x] (list 'clojure.lang.Util/isFalse x))
    :static true}
   ^boolean [x] (clojure.lang.Util/identical x false))
 
@@ -493,6 +496,7 @@
   "Returns true if x is the value true, false otherwise."
   {:tag Boolean,
    :added "1.0"
+   :inline (fn [x] (list 'clojure.lang.Util/isTrue x))
    :static true}
   ^boolean [x] (clojure.lang.Util/identical x true))
 
@@ -500,6 +504,7 @@
   "Returns true if x is logical false, false otherwise."
   {:tag Boolean
    :added "1.0"
+   :inline (fn [x] (list 'if x false true))
    :static true}
   ^boolean [x] (if x false true))
 

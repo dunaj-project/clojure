@@ -1028,6 +1028,34 @@ static public boolean booleanCast(boolean x){
 	return x;
 }
 
+static public boolean booleanCast(byte x){
+	return true;
+}
+
+static public boolean booleanCast(short x){
+	return true;
+}
+
+static public boolean booleanCast(int x){
+	return true;
+}
+
+static public boolean booleanCast(long x){
+	return true;
+}
+
+static public boolean booleanCast(float x){
+	return true;
+}
+
+static public boolean booleanCast(double x){
+	return true;
+}
+
+static public boolean booleanCast(char x){
+	return true;
+}
+
 static public byte byteCast(Object x){
 	if(x instanceof Byte)
 		return ((Byte) x).byteValue();

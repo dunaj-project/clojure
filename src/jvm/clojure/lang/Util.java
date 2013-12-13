@@ -152,6 +152,54 @@ static public boolean identical(Object k1, Object k2){
 	return k1 == k2;
 }
 
+static public boolean identical(byte k1, byte k2){
+	return k1 == k2;
+}
+
+static public boolean identical(short k1, short k2){
+	return k1 == k2;
+}
+
+static public boolean identical(int k1, int k2){
+	return k1 == k2;
+}
+
+static public boolean identical(long k1, long k2){
+	return k1 == k2;
+}
+
+static public boolean identical(float k1, float k2){
+	return k1 == k2;
+}
+
+static public boolean identical(double k1, double k2){
+	return k1 == k2;
+}
+
+static public boolean identical(boolean k1, boolean k2){
+	return k1 == k2;
+}
+
+static public boolean identical(char k1, char k2){
+	return k1 == k2;
+}
+
+static public boolean isFalse(boolean b){
+	return b == false;
+}
+
+static public boolean isFalse(Object b){
+        return b == Boolean.FALSE;
+}
+
+static public boolean isTrue(boolean b){
+	return b == true;
+}
+
+static public boolean isTrue(Object b){
+        return b == Boolean.TRUE;
+}
+
 static public Class classOf(Object x){
 	if(x != null)
 		return x.getClass();
@@ -258,6 +306,42 @@ static public RuntimeException sneakyThrow(Throwable t) {
 static private <T extends Throwable> void sneakyThrow0(Throwable t) throws T {
 	throw (T) t;
 }
+
+    static public boolean isInstance(Class c, Object o) {
+        return c.isInstance(o);
+    }
+
+    static public boolean isInstance(Class c, byte b) {
+        return (Byte.class == c) || (Byte.TYPE == c);
+    }
+
+    static public boolean isInstance(Class c, short b) {
+        return (Short.class == c) || (Short.TYPE == c);
+    }
+
+    static public boolean isInstance(Class c, int b) {
+        return (Integer.class == c) || (Integer.TYPE == c);
+    }
+
+    static public boolean isInstance(Class c, long b) {
+        return (Long.class == c) || (Long.TYPE == c);
+    }
+
+    static public boolean isInstance(Class c, float b) {
+        return (Float.class == c) || (Float.TYPE == c);
+    }
+
+    static public boolean isInstance(Class c, double b) {
+        return (Double.class == c) || (Double.TYPE == c);
+    }
+
+    static public boolean isInstance(Class c, boolean b) {
+        return (Boolean.class == c) || (Boolean.TYPE == c);
+    }
+
+    static public boolean isInstance(Class c, char b) {
+        return (Character.class == c) || (Character.TYPE == c);
+    }
 
 }
 

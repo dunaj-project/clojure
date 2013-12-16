@@ -567,7 +567,8 @@
     (or x true)
     (let [c (class x)
           impl #(get (:impls protocol) %)]
-      (or (impl c)
+      (or (and c (.isArray c) (impl :array))
+          (impl c)
           (and c (or (first (remove nil? (map impl (butlast (super-chain c)))))
                      (when-let [t (reduce1 pref (filter impl (disj (supers c) Object)))]
                        (impl t))
@@ -888,14 +889,15 @@
   extends?, satisfies?, extenders"
   {:added "1.2"} 
   [atype & proto+mmaps]
-  (let [_ (assert-host-lock atype)
-        atype (if (class? atype)
+  (let [array? (= :array atype)
+        vac (if (or array? (class? atype))
+              atype
+              (:var atype))
+        _ (assert-host-lock atype)
+        atype (if (or array? (class? atype))
                 atype
                 (:on-class atype))
-        _ (assert-host-lock atype)
-        vac (if (class? atype)
-              atype
-              (:var atype))]
+        _ (assert-host-lock atype)]
     (doseq [[proto mmap] (partition 2 proto+mmaps)]
       (assert-host-lock proto)        
       (when-not (protocol? proto)
@@ -904,20 +906,22 @@
       (when (and (:marker proto) (not (empty? mmap)))
         (println (str "Warning: " vac
                       " class is extending parasite protocol " (:var proto))))
-      (when (and (not (:marker proto)) (implements? proto atype))
+      (when (and (not (:marker proto)) (not array?) (implements? proto atype))
         (throw (IllegalArgumentException. 
                 (str vac " already directly implements " (:on-interface proto) " for protocol:"  
                      (:var proto)))))
-      (if-not (implements? proto atype)
+      (if array?
         (-reset-methods (alter-var-root (:var proto) assoc-in [:impls atype] mmap))
-        (if (empty? mmap)
-          (alter-var-root (:var proto) update-in [:marker-types] conj atype)
-          (throw (IllegalArgumentException. 
-                  (str vac " already directly implements " (:on-interface proto) " for marker protocol:"  
-                       (:var proto) ". Maybe you wanted to just mark the type?"))))))))
+        (if-not (implements? proto atype)
+          (-reset-methods (alter-var-root (:var proto) assoc-in [:impls atype] mmap))
+          (if (empty? mmap)
+            (alter-var-root (:var proto) update-in [:marker-types] conj atype)
+            (throw (IllegalArgumentException. 
+                    (str vac " already directly implements " (:on-interface proto) " for marker protocol:"  
+                         (:var proto) ". Maybe you wanted to just mark the type?")))))))))
 
 (defn- emit-impl [[p fs]]
-  [p (zipmap (map #(-> % first keyword) fs)
+  [p (zipmap (map #(-> % first name keyword) fs)
              (map #(cons `fn (drop 1 %)) fs))])
 
 (defn- emit-hinted-impl [c [p fs]]
@@ -938,6 +942,18 @@
   (let [impls (parse-impls specs)]
     `(extend ~c
              ~@(mapcat (partial emit-hinted-impl c) impls))))
+
+(defn- emit-extend-array [specs]
+  (let [impls (parse-impls specs)]
+    `(extend :array
+             ~@(mapcat emit-impl impls))))
+
+(defmacro extend-arrays
+  "Supplies a protocol implementation for any array,
+   including primitive arrays."
+  {:added "1.2"} 
+  [& specs]
+  (emit-extend-array specs))
 
 (defmacro extend-type 
   "A macro that expands into an extend call. Useful when you are

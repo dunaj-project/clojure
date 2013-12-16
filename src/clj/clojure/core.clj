@@ -798,7 +798,7 @@
   {
    :inline (fn [x y] `(. clojure.lang.Util compare ~x ~y))
    :added "1.0"}
-  [x y] (. clojure.lang.Util (compare x y)))
+  ^int [x y] (. clojure.lang.Util (compare x y)))
 
 (defmacro and
   "Evaluates exprs one at a time, from left to right. If a form
@@ -4716,7 +4716,7 @@
 
   {:added "1.0"
    :static true}
-  [x] (. clojure.lang.Util (hasheq x)))
+  ^int [x] (. clojure.lang.Util (hasheq x)))
 
 (defn interpose
   "Returns a lazy seq of the elements of coll separated by sep"

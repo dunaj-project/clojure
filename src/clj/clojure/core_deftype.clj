@@ -12,6 +12,8 @@
 
 (defonce ^:private host-lock #{})
 
+(def ^:dynamic *silent-parasite* false)
+
 (defn host-lock!
   ([e]
      (alter-var-root #'host-lock conj e))
@@ -418,6 +420,31 @@
          ~(str "Factory function for class " classname ", taking a map of keywords to field values.")
          ([m#] (~(symbol (str classname "/create")) m#)))
        ~classname)))
+
+(defmacro defrecord2
+  "Like defrecord but does not import Class and defines type object
+   with the structure similar to the protocol object."
+  {:added "1.2"
+   :arglists '([name [& fields] & opts+specs])}
+  [name fields & opts+specs]
+  (validate-fields fields)
+  (let [gname name
+        [interfaces methods opts] (parse-opts+specs opts+specs)
+        ns-part (namespace-munge *ns*)
+        classname (symbol (str ns-part "." gname))
+        hinted-fields fields
+        fields (vec (map #(with-meta % nil) fields))]
+    `(let []      
+       (declare ~(symbol (str  '-> gname)))
+       (declare ~(symbol (str 'map-> gname)))
+       ~(emit-defrecord name gname (vec hinted-fields) (vec interfaces) methods)
+       ~(build-positional-factory gname classname fields)
+       (defn ~(symbol (str 'map-> gname))
+         ~(str "Factory function for class " classname ", taking a map of keywords to field values.")
+         ([m#] (~(symbol (str classname "/create")) m#)))
+       (def ~name {:on '~classname
+                   :on-class ~classname
+                   ::record true}))))
 
 (defn- emit-deftype* 
   "Do not use this directly - use deftype"
@@ -903,7 +930,8 @@
       (when-not (protocol? proto)
         (throw (IllegalArgumentException.
                 (str proto " is not a protocol"))))
-      (when (and (:marker proto) (not (empty? mmap)))
+      (when (and (:marker proto) (not (empty? mmap))
+                 (false? *silent-parasite*))
         (println (str "Warning: " vac
                       " class is extending parasite protocol " (:var proto))))
       (when (and (not (:marker proto)) (not array?) (implements? proto atype))

@@ -135,13 +135,13 @@
  seq (fn ^:static seq ^clojure.lang.ISeq [coll] (. clojure.lang.RT (seq coll))))
 
 (def
- ^{:arglists '([^Class c x])
+ ^{:arglists '([^java.lang.Class c x])
    :doc "Evaluates x and tests if it is an instance of the class
     c. Returns true or false"
    :inline (fn [c x] (list 'clojure.lang.Util/isInstance c x))
    :tag Boolean
    :added "1.0"}
- instance? (fn instance? ^boolean [^Class c x] (. c (isInstance x))))
+ instance? (fn instance? ^boolean [^java.lang.Class c x] (. c (isInstance x))))
 
 (def
  ^{:arglists '([x])
@@ -325,7 +325,7 @@
   "Throws a ClassCastException if x is not a c, else returns x."
   {:added "1.0"
    :static true}
-  [^Class c x] 
+  [^java.lang.Class c x] 
   (. c (cast x)))
 
 (defn to-array
@@ -516,10 +516,10 @@
    :added "1.0"
    :static true}
   (^java.lang.String [] "")
-  (^java.lang.String [^Object x]
+  (^java.lang.String [^java.lang.Object x]
    (if (nil? x) "" (. x (toString))))
   (^java.lang.String [x & ys]
-     ((fn [^StringBuilder sb more]
+     ((fn [^java.lang.StringBuilder sb more]
           (if more
             (recur (. sb  (append (str (first more)))) (next more))
             (str sb)))
@@ -578,7 +578,7 @@
    :static true}
   ([name] (cond (keyword? name) name
                 (symbol? name) (clojure.lang.Keyword/intern ^clojure.lang.Symbol name)
-                (string? name) (clojure.lang.Keyword/intern ^String name)))
+                (string? name) (clojure.lang.Keyword/intern ^java.lang.String name)))
   ([ns name] (clojure.lang.Keyword/intern ns name)))
 
 (defn find-keyword
@@ -591,7 +591,7 @@
    :static true}
   ([name] (cond (keyword? name) name
                 (symbol? name) (clojure.lang.Keyword/find ^clojure.lang.Symbol name)
-                (string? name) (clojure.lang.Keyword/find ^String name)))
+                (string? name) (clojure.lang.Keyword/find ^java.lang.String name)))
   ([ns name] (clojure.lang.Keyword/find ns name)))
 
 
@@ -3148,7 +3148,7 @@
   "Returns the Class of x"
   {:added "1.0"
    :static true}
-  ^Class [^Object x] (if (nil? x) x (. x (getClass))))
+  ^java.lang.Class [^java.lang.Object x] (if (nil? x) x (. x (getClass))))
 
 (defn type 
   "Returns the :type metadata of x, or its Class if none"
@@ -3389,7 +3389,7 @@
      (recur (first more) nmore)
      (apply pr more))))
 
-(def ^:private ^String system-newline
+(def ^:private ^java.lang.String system-newline
      (System/getProperty "line.separator"))
 
 (defn newline
@@ -3650,9 +3650,9 @@
   obtained using, e.g., Integer/TYPE."
   {:added "1.0"
    :static true}
-  ([^Class type len]
+  ([^java.lang.Class type len]
    (. Array (newInstance type (int len))))
-  ([^Class type dim & more-dims]
+  ([^java.lang.Class type dim & more-dims]
    (let [dims (cons dim more-dims)
          ^"[I" dimarray (make-array (. Integer TYPE)  (count dims))]
      (dotimes [i (alength dimarray)]
@@ -4250,7 +4250,7 @@
                                 (conj (pop groups) (conj (peek groups) [k v]))
                                 (conj groups [k v])))
                             [] (partition 2 seq-exprs)))
-        err (fn [& msg] (throw (IllegalArgumentException. ^String (apply str msg))))
+        err (fn [& msg] (throw (IllegalArgumentException. ^java.lang.String (apply str msg))))
         emit-bind (fn emit-bind [[[bind expr & mod-pairs]
                                   & [[_ next-expr] :as next-groups]]]
                     (let [giter (gensym "iter__")
@@ -4567,8 +4567,8 @@
   at end (defaults to length of string), exclusive."
   {:added "1.0"
    :static true}
-  (^java.lang.String [^String s start] (. s (substring start)))
-  (^java.lang.String [^String s start end] (. s (substring start end))))
+  (^java.lang.String [^java.lang.String s start] (. s (substring start)))
+  (^java.lang.String [^java.lang.String s start end] (. s (substring start end))))
 
 (defn max-key
   "Returns the x for which (k x), a number, is greatest."
@@ -4940,14 +4940,14 @@
   (and (class? c)
        (.isAssignableFrom java.lang.annotation.Annotation c)))
 
-(defn- is-runtime-annotation? [^Class c]
+(defn- is-runtime-annotation? [^java.lang.Class c]
   (boolean 
    (and (is-annotation? c)
         (when-let [^java.lang.annotation.Retention r 
                    (.getAnnotation c java.lang.annotation.Retention)] 
           (= (.value r) java.lang.annotation.RetentionPolicy/RUNTIME)))))
 
-(defn- descriptor [^Class c] (clojure.asm.Type/getDescriptor c))
+(defn- descriptor [^java.lang.Class c] (clojure.asm.Type/getDescriptor c))
 
 (declare process-annotation)
 (defn- add-annotation [^clojure.asm.AnnotationVisitor av name v]
@@ -5034,7 +5034,7 @@
   "Returns the immediate superclass and direct interfaces of c, if any"
   {:added "1.0"
    :static true}
-  [^Class c]
+  [^java.lang.Class c]
   (when c
     (let [i (seq (.getInterfaces c))
           s (.getSuperclass c)]
@@ -5044,7 +5044,7 @@
   "Returns the immediate and indirect superclasses and interfaces of c, if any"
   {:added "1.0"
    :static true}
-  [^Class class]
+  [^java.lang.Class class]
   (loop [ret (set (bases class)) cs ret]
     (if (seq cs)
       (let [c (first cs) bs (bases c)]
@@ -5062,7 +5062,7 @@
   ([h child parent]
    (or (= child parent)
        (and (class? parent) (class? child)
-            (. ^Class parent isAssignableFrom child))
+            (. ^java.lang.Class parent isAssignableFrom child))
        (contains? ((:ancestors h) child) parent)
        (and (class? child) (some #(contains? ((:ancestors h) %) parent) (supers child)))
        (and (vector? parent) (vector? child)
@@ -5196,7 +5196,7 @@
   [^java.sql.ResultSet rs]
     (let [rsmeta (. rs (getMetaData))
           idxs (range 1 (inc (. rsmeta (getColumnCount))))
-          keys (map (comp keyword #(.toLowerCase ^String %))
+          keys (map (comp keyword #(.toLowerCase ^java.lang.String %))
                     (map (fn [i] (. rsmeta (getColumnLabel i))) idxs))
           check-keys
                 (or (apply distinct? keys)
@@ -5228,7 +5228,7 @@
   string syntax"
   {:added "1.0"
    :static true}
-  ^String [fmt & args]
+  ^java.lang.String [fmt & args]
   (String/format fmt (to-array args)))
 
 (defn printf
@@ -5243,7 +5243,7 @@
 (defmacro with-loading-context [& body]
   `((fn loading# [] 
         (. clojure.lang.Var (pushThreadBindings {clojure.lang.Compiler/LOADER  
-                                                 (.getClassLoader (.getClass ^Object loading#))}))
+                                                 (.getClassLoader (.getClass ^java.lang.Object loading#))}))
         (try
          ~@body
          (finally
@@ -5371,7 +5371,7 @@
   "Throws a CompilerException with a message if pred is true"
   [pred fmt & args]
   (when pred
-    (let [^String message (apply format fmt args)
+    (let [^java.lang.String message (apply format fmt args)
           exception (Exception. message)
           raw-trace (.getStackTrace exception)
           boring? #(not= (.getMethodName ^StackTraceElement %) "doInvoke")
@@ -5606,8 +5606,8 @@
   directory for the current namespace otherwise."
   {:added "1.0"}
   [& paths]
-  (doseq [^String path paths]
-    (let [^String path (if (.startsWith path "/")
+  (doseq [^java.lang.String path paths]
+    (let [^java.lang.String path (if (.startsWith path "/")
                           path
                           (str (root-directory (ns-name *ns*)) \/ path))]
       (when *loading-verbosely*
@@ -6485,9 +6485,9 @@
       (re-matches
        #"(\d+)\.(\d+)\.(\d+)(?:-([a-zA-Z0-9_]+))?(?:-(SNAPSHOT))?"
        version-string)
-      clojure-version {:major       (Integer/valueOf ^String major)
-                       :minor       (Integer/valueOf ^String minor)
-                       :incremental (Integer/valueOf ^String incremental)
+      clojure-version {:major       (Integer/valueOf ^java.lang.String major)
+                       :minor       (Integer/valueOf ^java.lang.String minor)
+                       :incremental (Integer/valueOf ^java.lang.String incremental)
                        :qualifier   (if (= qualifier "SNAPSHOT") nil qualifier)}]
   (def ^:dynamic *clojure-version*
     (if (.contains version-string "SNAPSHOT")

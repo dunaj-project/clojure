@@ -63,7 +63,7 @@ static final Symbol DEFTYPE = Symbol.intern("deftype*");
 static final Symbol CASE = Symbol.intern("case*");
 
 //static final Symbol THISFN = Symbol.intern("thisfn");
-static final Symbol CLASS = Symbol.intern("Class");
+static final Symbol CLASS = Symbol.intern("java.lang.Class");
 static final Symbol NEW = Symbol.intern("new");
 static final Symbol THIS = Symbol.intern("this");
 static final Symbol REIFY = Symbol.intern("reify*");

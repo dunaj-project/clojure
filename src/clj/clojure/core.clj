@@ -220,6 +220,13 @@
 (def ^{:private true :dynamic true}
   assert-valid-fdecl (fn [fdecl]))
 
+(def 
+  ^{:ann 'IAssociative
+    :no-check true
+    :dynamic true}
+  *default-associative*
+  {})
+
 (def
  ^{:private true}
  sigs
@@ -1475,7 +1482,7 @@
   {:added "1.0"
    :static true}
   [map keyseq]
-    (loop [ret {} keys (seq keyseq)]
+    (loop [ret *default-associative* keys (seq keyseq)]
       (if keys
         (let [entry (. clojure.lang.RT (find map (first keys)))]
           (recur
@@ -2732,7 +2739,7 @@
    :static true}
   [& maps]
   (when (some identity maps)
-    (reduce1 #(conj (or %1 {}) %2) maps)))
+    (reduce1 #(conj (or %1 *default-associative*) %2) maps)))
 
 (defn merge-with
   "Returns a map that consists of the rest of the maps conj-ed onto
@@ -2749,7 +2756,7 @@
 			    (assoc m k (f (get m k) v))
 			    (assoc m k v))))
           merge2 (fn [m1 m2]
-		   (reduce1 merge-entry (or m1 {}) (seq m2)))]
+		   (reduce1 merge-entry (or m1 *default-associative*) (seq m2)))]
       (reduce1 merge2 maps))))
 
 
@@ -5679,9 +5686,10 @@
 (defn empty?
   "Returns true if coll has no items - same as (not (seq coll)).
   Please use the idiom (seq x) rather than (not (empty? x))"
-  {:added "1.0"
+  {:tag java.lang.Boolean
+   :added "1.0"
    :static true}
-  [coll] (not (seq coll)))
+  ^boolean [coll] (not (seq coll)))
 
 (defn coll?
   "Returns true if x implements IPersistentCollection"
@@ -6578,7 +6586,7 @@
     (fn [ret x]
       (let [k (f x)]
         (assoc! ret k (conj (get ret k []) x))))
-    (transient {}) coll)))
+    (transient *default-associative*) coll)))
 
 (defn partition-by
   "Applies f to each value in coll, splitting it each time f returns
@@ -6602,7 +6610,7 @@
   (persistent!
    (reduce (fn [counts x]
              (assoc! counts x (inc (get counts x 0))))
-           (transient {}) coll)))
+           (transient *default-associative*) coll)))
 
 (defn reductions
   "Returns a lazy seq of the intermediate values of the reduction (as

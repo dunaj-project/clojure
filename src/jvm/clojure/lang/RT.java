@@ -541,6 +541,10 @@ static ISeq seqFrom(Object coll){
 		return StringSeq.create((CharSequence) coll);
 	else if(coll instanceof Map)
 		return seq(((Map) coll).entrySet());
+        else if(Protocol.satisfiesISeqable(coll))
+                return (ISeq)Protocol.bridgeISeqableSeq(coll);
+        else if(Protocol.satisfiesIRed(coll))
+                return (ISeq)Protocol.bridgeRed2Seq(coll);
 	else {
 		Class c = coll.getClass();
 		Class sc = c.getSuperclass();
@@ -705,7 +709,9 @@ static Object getFrom(Object coll, Object key){
 		if(n >= 0 && n < count(coll))
 			return nth(coll, n);
 		return null;
-	}
+	} else if(Protocol.satisfiesILookup(coll))
+            return Protocol.bridgeILookupGet(coll, key, null);
+
 
 	return null;
 }
@@ -735,6 +741,8 @@ static Object getFrom(Object coll, Object key, Object notFound){
 		int n = ((Number) key).intValue();
 		return n >= 0 && n < count(coll) ? nth(coll, n) : notFound;
 	}
+        else if(Protocol.satisfiesILookup(coll))
+                return Protocol.bridgeILookupGet(coll, key, notFound);
 	return notFound;
 
 }
@@ -837,6 +845,13 @@ static Object nthFrom(Object coll, int n){
 		}
 		throw new IndexOutOfBoundsException();
 	}
+        else if(Protocol.satisfiesIIndexed(coll)) {
+                Object sentinel = new Object();
+                Object ret = Protocol.bridgeIIndexedNth(coll, n, sentinel);
+                if (ret == sentinel)
+                    throw new IndexOutOfBoundsException();
+                return ret;
+        }
 	else
 		throw new UnsupportedOperationException(
 				"nth not supported on this type: " + coll.getClass().getSimpleName());
@@ -896,6 +911,8 @@ static Object nthFrom(Object coll, int n, Object notFound){
 		}
 		return notFound;
 	}
+        else if(Protocol.satisfiesIIndexed(coll))
+                return Protocol.bridgeIIndexedNth(coll, n, notFound);
 	else
 		throw new UnsupportedOperationException(
 				"nth not supported on this type: " + coll.getClass().getSimpleName());

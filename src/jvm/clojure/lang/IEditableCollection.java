@@ -14,4 +14,5 @@ package clojure.lang;
 
 public interface IEditableCollection{
 ITransientCollection asTransient();
+ITransientCollection asTransient(Number capacityHint);
 }

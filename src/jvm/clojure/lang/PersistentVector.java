@@ -88,6 +88,10 @@ public TransientVector asTransient(){
 	return new TransientVector(this);
 }
 
+public TransientVector asTransient(Number capacityHint){
+	return new TransientVector(this);
+}
+
 final int tailoff(){
 	if(cnt < 32)
 		return 0;

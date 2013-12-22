@@ -371,6 +371,10 @@ public ITransientMap asTransient(){
 	return new TransientArrayMap(array);
 }
 
+public ITransientMap asTransient(Number capacityHint){
+	return new TransientArrayMap(array);
+}
+
 static final class TransientArrayMap extends ATransientMap {
 	int len;
 	final Object[] array;

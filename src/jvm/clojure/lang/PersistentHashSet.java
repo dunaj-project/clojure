@@ -111,6 +111,10 @@ public ITransientCollection asTransient() {
 	return new TransientHashSet(((PersistentHashMap) impl).asTransient());
 }
 
+public ITransientCollection asTransient(Number capacityHint) {
+	return new TransientHashSet(((PersistentHashMap) impl).asTransient());
+}
+
 public IPersistentMap meta(){
 	return _meta;
 }
@@ -120,7 +124,7 @@ static final class TransientHashSet extends ATransientSet {
 		super(impl);
 	}
 
-	public IPersistentCollection persistent() {
+	public Object persistent() {
 		return new PersistentHashSet(null, impl.persistent());
 	}
 }

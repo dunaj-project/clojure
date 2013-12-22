@@ -229,6 +229,10 @@ public TransientHashMap asTransient() {
 	return new TransientHashMap(this);
 }
 
+public TransientHashMap asTransient(Number capacityHint) {
+	return new TransientHashMap(this);
+}
+
 public IPersistentMap meta(){
 	return _meta;
 }

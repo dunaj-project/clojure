@@ -635,7 +635,7 @@ public static class FnReader extends AFn{
 
 			PersistentVector args = PersistentVector.EMPTY;
 			PersistentTreeMap argsyms = (PersistentTreeMap) ARG_ENV.deref();
-			ISeq rargs = argsyms.rseq();
+			ISeq rargs = (ISeq)argsyms.rseq();
 			if(rargs != null)
 				{
 				int higharg = (Integer) ((Map.Entry) rargs.first()).getKey();

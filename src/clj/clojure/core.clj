@@ -511,7 +511,7 @@
   "Returns true if x is logical false, false otherwise."
   {:tag Boolean
    :added "1.0"
-   :inline (fn [x] (list 'if x false true))
+   :inline (fn [x] (list `if x false true))
    :static true}
   ^boolean [x] (if x false true))
 

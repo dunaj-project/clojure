@@ -2472,7 +2472,7 @@
   {:tag Boolean
    :added "1.0"
    :static true}
-  [pred coll]
+  ^boolean [pred coll]
   (cond
    (nil? (seq coll)) true
    (pred (first coll)) (recur pred (next coll))
@@ -4563,11 +4563,11 @@
   ^boolean [s]
   (. clojure.lang.Compiler isSpecial s))
 
-(defn var?
+(defn ^java.lang.Boolean var?
   "Returns true if v is of type clojure.lang.Var"
   {:added "1.0"
    :static true}
-  [v] (instance? clojure.lang.Var v))
+  ^boolean [v] (instance? clojure.lang.Var v))
 
 (defn subs
   "Returns the substring of s beginning at start inclusive, and ending
@@ -5009,7 +5009,8 @@
 (defn bound?
   "Returns true if all of the vars provided as arguments have any bound value, root or thread-local.
    Implies that deref'ing the provided vars will succeed. Returns true if no vars are provided."
-  {:added "1.2"
+  {:tag Boolean
+   :added "1.2"
    :static true}
   [& vars]
   (every? #(.isBound ^clojure.lang.Var %) vars))
@@ -5017,7 +5018,8 @@
 (defn thread-bound?
   "Returns true if all of the vars provided as arguments have thread-local bindings.
    Implies that set!'ing the provided vars will succeed.  Returns true if no vars are provided."
-  {:added "1.2"
+  {:tag Boolean
+   :added "1.2"
    :static true}
   [& vars]
   (every? #(.getThreadBinding ^clojure.lang.Var %) vars))

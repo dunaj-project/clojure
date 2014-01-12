@@ -612,10 +612,10 @@
 (defn- implements? [protocol atype]
   (and atype (.isAssignableFrom ^Class (:on-interface protocol) atype)))
 
-(defn extends? 
+(defn ^java.lang.Boolean extends? 
   "Returns true if atype extends protocol"
   {:added "1.2"}
-  [protocol atype]
+  ^boolean [protocol atype]
   (boolean (or (implements? protocol atype) 
                (get (:impls protocol) atype))))
 

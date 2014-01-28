@@ -22,7 +22,7 @@ import java.util.Set;
 public class Namespace extends AReference implements Serializable {
 final public Symbol name;
 transient final AtomicReference<IPersistentMap> mappings = new AtomicReference<IPersistentMap>(RT.map());
-transient final AtomicReference<IPersistentMap> aliases = new AtomicReference<IPersistentMap>();
+transient public final AtomicReference<IPersistentMap> aliases = new AtomicReference<IPersistentMap>();
 
 final static ConcurrentHashMap<Symbol, Namespace> namespaces = new ConcurrentHashMap<Symbol, Namespace>();
 

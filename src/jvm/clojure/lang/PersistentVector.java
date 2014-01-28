@@ -237,6 +237,7 @@ public ISeq seq(){
 	return chunkedSeq();
 }
 
+@Override
 Iterator rangedIterator(final int start, final int end){
 	return new Iterator(){
 		int i = start;

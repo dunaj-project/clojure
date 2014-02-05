@@ -986,10 +986,12 @@ static int hasheq(Number x){
 	if(xc == Long.class
 		|| xc == Integer.class
 		|| xc == Short.class
-		|| xc == Byte.class)
+		|| xc == Byte.class
+		|| (xc == BigInteger.class && lte(x, Long.MAX_VALUE) && gte(x,Long.MIN_VALUE)))
 		{
 		long lpart = x.longValue();
-		return (int) (lpart ^ (lpart >>> 32));
+		return Murmur3.hashLong(lpart);
+		//return (int) (lpart ^ (lpart >>> 32));
 		}
 	if(xc == BigDecimal.class)
 		{

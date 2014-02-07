@@ -97,7 +97,7 @@
   [s]
   (let [add-next (fn [m [n & b]]
                    (update-in m [n] conj b))
-        gm (reduce add-next {} s)]
+        gm (reduce1 add-next {} s)]
     (map #(if (next (second %))
             ;; multiple implementations
             (cons (first %) (second %))

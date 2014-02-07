@@ -76,7 +76,7 @@
           trk (get tr-map (keyword (name (first spec))))]
       (assert trk (str "Translation of method " (first spec)
                        " not found in protocol " proto
-                       " which contanis following data "
+                       " which contains following data "
                        (deref (resolve proto))))
       (cons (symbol (name trk))
             (next spec)))
@@ -91,10 +91,24 @@
              (drop-while seq? (next s)))
       ret)))
 
+(defn- group-similar
+  "make ((-foo [o] :foo) (-foo [o x] :bar)) into
+        ((-foo ([o] :foo) ([o x] :bar)))"
+  [s]
+  (let [add-next (fn [m [n & b]]
+                   (update-in m [n] conj b))
+        gm (reduce add-next {} s)]
+    (map #(if (next (second %))
+            ;; multiple implementations
+            (cons (first %) (second %))
+            ;; just one impl, maybe multiarity!!!
+            (cons (first %) (first (second %)))) gm)))
+
 (defn- parse-impls [specs]
   (loop [ret {} s specs]
     (if (seq s)
-      (recur (assoc ret (first s) (take-while seq? (next s)))
+      (recur (assoc ret (first s)
+                    (group-similar (take-while seq? (next s))))
              (drop-while seq? (next s)))
       ret)))
 

@@ -46,14 +46,14 @@ public IObj withMeta(final IPersistentMap meta){
 public int compare(Object o1, Object o2){
         Object o = invoke(o1, o2);
 
-        if(o instanceof Boolean)
+        if(o instanceof Number)
                 {
-                if(RT.booleanCast(o))
-                        return -1;
-                return RT.booleanCast(invoke(o2,o1))? 1 : 0;
+                Number n = (Number) o;
+                return n.intValue();
                 }
 
-        Number n = (Number) o;
-        return n.intValue();
+        if(RT.booleanCast(o))
+            return -1;
+        return RT.booleanCast(invoke(o2,o1))? 1 : 0;
 }
 }

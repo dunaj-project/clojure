@@ -78,7 +78,7 @@
                        " not found in protocol " proto
                        " which contains following data "
                        (deref (resolve proto))))
-      (cons (symbol (name trk))
+      (cons (with-meta (symbol (name trk)) (meta (first spec)))
             (next spec)))
     spec))
 
@@ -695,6 +695,38 @@
          (set! (.__methodImplCache f#) cache#)
          f#))))
 
+(defn- emit-method-builder2 [on-interface method on-method arglists hints]
+  (let [methodk (keyword method)
+        gthis (with-meta (gensym) {:tag 'clojure.lang.AFunction})
+        ginterf (gensym)]
+    `(fn [cache#]
+       (let [~ginterf
+             (fn
+               ~@(map 
+                  (fn [args]
+                    (let [gargs (map #(gensym (str "gf__" % "__")) args)
+                          target (first gargs)
+                          attach-hint (fn [s h] (if (nil? h) s (with-meta s {:tag h})))
+                          rgargs (map attach-hint (rest gargs) (concat hints (repeat nil)))]
+                      `([~@gargs]
+                          (. ~(with-meta target {:tag on-interface}) (~(or on-method method) ~@rgargs)))))
+                  arglists))
+             ^clojure.lang.AFunction f#
+             (fn ~gthis
+               ~@(map 
+                  (fn [args]
+                    (let [gargs (map #(gensym (str "gf__" % "__")) args)
+                          target (first gargs)]
+                      `([~@gargs]
+                          (let [cache# (.__methodImplCache ~gthis)
+                                f# (.fnFor cache# (clojure.lang.Util/classOf ~target))]
+                            (if f# 
+                              (f# ~@gargs)
+                              ((-cache-protocol-fn ~gthis ~target ~on-interface ~ginterf) ~@gargs))))))
+                  arglists))]
+         (set! (.__methodImplCache f#) cache#)
+         f#))))
+
 (defn -reset-methods [protocol]
   (doseq [[^clojure.lang.Var v build] (:method-builders protocol)]
     (let [cache (clojure.lang.MethodImplCache. protocol (keyword (.sym v)))]
@@ -836,7 +868,7 @@
                                 (mapcat 
                                  (fn [s]
                                    [`(intern *ns* (with-meta '~(:name s) (merge '~s {:protocol (var ~name)})))
-                                    (emit-method-builder (:on-interface opts) (:name s) (:on s) (:arglists s))])
+                                    (emit-method-builder2 (:on-interface opts) (:name s) (:on s) (:arglists s) (:hints s))])
                                  (vals sigs)))))
      (-reset-methods ~name)
      '~name)))

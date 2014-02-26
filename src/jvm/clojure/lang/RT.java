@@ -543,6 +543,8 @@ static ISeq seqFrom(Object coll){
 		return seq(((Map) coll).entrySet());
         else if(Protocol.satisfiesISeqable(coll))
                 return (ISeq)Protocol.bridgeISeqableSeq(coll);
+        else if(Protocol.satisfiesIIter(coll))
+                return (ISeq)Protocol.bridgeIter2Seq(coll);
         else if(Protocol.satisfiesIRed(coll))
                 return (ISeq)Protocol.bridgeRed2Seq(coll);
 	else {

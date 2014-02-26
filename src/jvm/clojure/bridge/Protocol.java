@@ -81,10 +81,12 @@ public class Protocol {
     ////////// clojure.bridge
     static public Namespace BRIDGE_NS = null;
     static public Var RED2SEQ = null;
+    static public Var ITER2SEQ = null;
 
     ////////// dunaj.coll
     static public Namespace COLL_NS = null;
     static public Var PRED = null;
+    static public Var PITER = null;
     static public Var PSEQABLE = null;
     static public Var PLOOKUP = null;
     static public Var PINDEXED = null;
@@ -99,10 +101,12 @@ public class Protocol {
         //// clojure.bridge
         BRIDGE_NS = namespace("clojure.bridge");
         RED2SEQ = fun(BRIDGE_NS, "red-to-seq");
+        ITER2SEQ = fun(BRIDGE_NS, "iter-to-seq");
 
         //// dunaj.coll
         COLL_NS = namespace("dunaj.coll");
         PRED = proto(COLL_NS, "IRed");
+        PITER = proto(COLL_NS, "IIterable");
         PSEQABLE = proto(COLL_NS, "ISeqable");
         PLOOKUP = proto(COLL_NS, "ILookup");
         PINDEXED = proto(COLL_NS, "IIndexed");
@@ -117,10 +121,18 @@ public class Protocol {
         return RED2SEQ.invoke(o);
     }
 
+    public static Object bridgeIter2Seq(Object o) {
+        return ITER2SEQ.invoke(o);
+    }
+
     ////////// dunaj.coll
 
     public static boolean satisfiesIRed(Object o) {
         return satisfies(PRED, o);
+    }
+
+    public static boolean satisfiesIIter(Object o) {
+        return satisfies(PITER, o);
     }
 
     public static boolean satisfiesISeqable(Object o) {

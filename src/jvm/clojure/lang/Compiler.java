@@ -3561,6 +3561,29 @@ static class InvokeExpr implements Expr{
 	public java.lang.reflect.Method onMethod;
 	static Keyword onKey = Keyword.intern("on");
 	static Keyword methodMapKey = Keyword.intern("method-map");
+	static Keyword sigsKey = Keyword.intern("sigs");
+	static Keyword hintsKey = Keyword.intern("hints");
+
+        static List filterMethods(List methods, List hints) {
+            if(hints == null)
+                return methods;
+            ArrayList ret = new ArrayList();
+            for(Object om: methods) {
+                boolean match = true;
+                java.lang.reflect.Method m = (java.lang.reflect.Method) om;
+                Class[] pt = m.getParameterTypes();
+                for(int i = 0; i < hints.size(); ++i) {
+                    if (HostExpr.tagToClass(hints.get(i)) != pt[i]) {
+                        match = false;
+                        break;
+                    }
+                }
+                if (match == true) {
+                    ret.add(m);
+                }
+            }
+            return ret;
+        }
 
 	public InvokeExpr(String source, int line, int column, Symbol tag, Expr fexpr, IPersistentVector args) {
 		this.source = source;
@@ -3581,6 +3604,8 @@ static class InvokeExpr implements Expr{
 				if(this.protocolOn != null)
 					{
 					IPersistentMap mmap = (IPersistentMap) RT.get(pvar.get(), methodMapKey);
+					IPersistentMap sigs = (IPersistentMap) RT.get(pvar.get(), sigsKey);
+
                     Keyword mmapVal = (Keyword) mmap.valAt(Keyword.intern(fvar.sym));
                     if (mmapVal == null) {
                         throw new IllegalArgumentException(
@@ -3590,10 +3615,17 @@ static class InvokeExpr implements Expr{
                     }
                     String mname = munge(mmapVal.sym.toString());
  					List methods = Reflector.getMethods(protocolOn, args.count() - 1, mname, false);
-					if(methods.size() != 1)
+					if(methods.size() != 1) {
+                                            // check for hints before throwing
+                                            IPersistentMap smap = (IPersistentMap) sigs.valAt(Keyword.intern(fvar.sym));
+                                            List hints = (List) smap.valAt(hintsKey);
+                                            methods = filterMethods(methods, hints);
+                                                if(methods.size() != 1) {
 						throw new IllegalArgumentException(
 								"No single method: " + mname + " of interface: " + protocolOn.getName() +
 								" found for function: " + fvar.sym + " of protocol: " + pvar.sym);
+                                                }
+                                        }
 					this.onMethod = (java.lang.reflect.Method) methods.get(0);
 					}
 				}

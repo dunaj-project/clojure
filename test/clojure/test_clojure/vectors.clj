@@ -327,7 +327,9 @@
            (vector-of ""))))
   (testing "vector-like (vector-of :type x1 x2 x3 … xn)"
     (are [vec gvec] (and (instance? clojure.core.Vec gvec)
-                         (= (into (vector-of :int) vec) gvec))
+                         (= (into (vector-of :int) vec) gvec)
+                         (= vec gvec)
+                         (= (hash vec) (hash gvec)))
          [1] (vector-of :int 1)
          [1 2] (vector-of :int 1 2)
          [1 2 3] (vector-of :int 1 2 3)
@@ -357,6 +359,12 @@
            (vector-of :int (sorted-set 1 2 3 4))
            (vector-of :int 1 2 "3")
            (vector-of :int "1" "2" "3")))))
+
+(deftest empty-vector-equality
+  (let [colls [[] (vector-of :long) '()]]
+    (doseq [c1 colls, c2 colls]
+      (is (= c1 c2))
+      (is (.equals c1 c2)))))
 
 (defn =vec
   [expected v] (and (vector? v) (= expected v)))

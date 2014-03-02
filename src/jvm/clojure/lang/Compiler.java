@@ -1055,7 +1055,7 @@ static public abstract class HostExpr implements Expr, MaybePrimitiveExpr{
 				if(c != null) {
 					return new StaticFieldExpr(line, column, c, munge(sym.name), tag);
 				} else
-					return new InstanceFieldExpr(line, column, instance, munge(sym.name), tag);
+					return new InstanceFieldExpr(line, column, instance, munge(sym.name), tag, (((Symbol)RT.third(form)).name.charAt(0) == '-'));
 				}
 			else
 				{
@@ -1193,11 +1193,12 @@ static class InstanceFieldExpr extends FieldExpr implements AssignableExpr{
 	public final int line;
 	public final int column;
 	public final Symbol tag;
-	final static Method invokeNoArgInstanceMember = Method.getMethod("Object invokeNoArgInstanceMember(Object,String)");
+	public final boolean requireField;
+	final static Method invokeNoArgInstanceMember = Method.getMethod("Object invokeNoArgInstanceMember(Object,String,boolean)");
 	final static Method setInstanceFieldMethod = Method.getMethod("Object setInstanceField(Object,String,Object)");
 
 
-	public InstanceFieldExpr(int line, int column, Expr target, String fieldName, Symbol tag) {
+	public InstanceFieldExpr(int line, int column, Expr target, String fieldName, Symbol tag, boolean requireField) {
 		this.target = target;
 		this.targetClass = target.hasJavaClass() ? target.getJavaClass() : null;
 		this.field = targetClass != null ? Reflector.getField(targetClass, fieldName, false) : null;
@@ -1205,16 +1206,26 @@ static class InstanceFieldExpr extends FieldExpr implements AssignableExpr{
 		this.line = line;
 		this.column = column;
 		this.tag = tag;
+		this.requireField = requireField;
 		if(field == null && RT.booleanCast(RT.WARN_ON_REFLECTION.deref()))
 			{
-			RT.errPrintWriter()
-		      .format("Reflection warning, %s:%d:%d - reference to field %s can't be resolved.\n",
-					  SOURCE_PATH.deref(), line, column, fieldName);
+			if(targetClass == null)
+				{
+				RT.errPrintWriter()
+					.format("Reflection warning, %s:%d:%d - reference to field %s can't be resolved.\n",
+									SOURCE_PATH.deref(), line, column, fieldName);
+				}
+			else
+				{
+				RT.errPrintWriter()
+					.format("Reflection warning, %s:%d:%d - reference to field %s on %s can't be resolved.\n",
+									SOURCE_PATH.deref(), line, column, fieldName, targetClass.getName());
+				}
 			}
 	}
 
 	public Object eval() {
-		return Reflector.invokeNoArgInstanceMember(target.eval(), fieldName);
+		return Reflector.invokeNoArgInstanceMember(target.eval(), fieldName, requireField);
 	}
 
 	public boolean canEmitPrimitive(){
@@ -1252,6 +1263,7 @@ static class InstanceFieldExpr extends FieldExpr implements AssignableExpr{
 			{
 			target.emit(C.EXPRESSION, objx, gen);
 			gen.push(fieldName);
+			gen.push(requireField);
 			gen.invokeStatic(REFLECTOR_TYPE, invokeNoArgInstanceMember);
 			if(context == C.STATEMENT)
 				gen.pop();
@@ -1508,8 +1520,15 @@ static class InstanceMethodExpr extends MethodExpr{
 			{
 			List methods = Reflector.getMethods(target.getJavaClass(), args.count(), methodName, false);
 			if(methods.isEmpty())
+				{
 				method = null;
-			//throw new IllegalArgumentException("No matching method found");
+				if(RT.booleanCast(RT.WARN_ON_REFLECTION.deref()))
+					{
+					RT.errPrintWriter()
+						.format("Reflection warning, %s:%d:%d - call to method %s on %s can't be resolved (no such method).\n",
+							SOURCE_PATH.deref(), line, column, methodName, target.getJavaClass().getName());
+					}
+				}
 			else
 				{
 				int methodidx = 0;
@@ -1533,16 +1552,23 @@ static class InstanceMethodExpr extends MethodExpr{
 					m = Reflector.getAsMethodOfPublicBase(m.getDeclaringClass(), m);
 					}
 				method = m;
+				if(method == null && RT.booleanCast(RT.WARN_ON_REFLECTION.deref()))
+					{
+					RT.errPrintWriter()
+						.format("Reflection warning, %s:%d:%d - call to method %s on %s can't be resolved (argument types: %s).\n",
+							SOURCE_PATH.deref(), line, column, methodName, target.getJavaClass().getName(), getTypeStringForArgs(args));
+					}
 				}
 			}
 		else
-			method = null;
-
-		if(method == null && RT.booleanCast(RT.WARN_ON_REFLECTION.deref()))
 			{
-			RT.errPrintWriter()
-		      .format("Reflection warning, %s:%d:%d - call to %s can't be resolved.\n",
-					  SOURCE_PATH.deref(), line, column, methodName);
+			method = null;
+			if(RT.booleanCast(RT.WARN_ON_REFLECTION.deref()))
+				{
+				RT.errPrintWriter()
+					.format("Reflection warning, %s:%d:%d - call to method %s can't be resolved (target class is unknown).\n",
+						SOURCE_PATH.deref(), line, column, methodName);
+				}
 			}
 	}
 
@@ -1692,8 +1718,8 @@ static class StaticMethodExpr extends MethodExpr{
 		if(method == null && RT.booleanCast(RT.WARN_ON_REFLECTION.deref()))
 			{
 			RT.errPrintWriter()
-              .format("Reflection warning, %s:%d:%d - call to %s can't be resolved.\n",
-                      SOURCE_PATH.deref(), line, column, methodName);
+				.format("Reflection warning, %s:%d:%d - call to static method %s on %s can't be resolved (argument types: %s).\n",
+					SOURCE_PATH.deref(), line, column, methodName, c.getName(), getTypeStringForArgs(args));
 			}
 	}
 
@@ -2446,6 +2472,17 @@ static public boolean subsumes(Class[] c1, Class[] c2){
 			}
 		}
 	return better;
+}
+
+static String getTypeStringForArgs(IPersistentVector args){
+	StringBuilder sb = new StringBuilder();
+	for(int i = 0; i < args.count(); i++)
+		{
+		Expr arg = (Expr) args.nth(i);
+		if (i > 0) sb.append(", ");
+		sb.append(arg.hasJavaClass() ? arg.getJavaClass().getName() : "unknown");
+		}
+	return sb.toString();
 }
 
 static int getMatchingParams(String methodName, ArrayList<Class[]> paramlists, IPersistentVector argexprs,
@@ -6234,6 +6271,9 @@ public static class LetExpr implements Expr, MaybePrimitiveExpr{
 				method.locals = backupMethodLocals;
 				method.indexlocals = backupMethodIndexLocals;
 
+				PathNode looproot = new PathNode(PATHTYPE.PATH, (PathNode) CLEAR_PATH.get());
+				PathNode clearroot = new PathNode(PATHTYPE.PATH,looproot);
+				PathNode clearpath = new PathNode(PATHTYPE.PATH,looproot);
 				if(isLoop)
 					dynamicBindings = dynamicBindings.assoc(LOOP_LOCALS, null);
 
@@ -6266,12 +6306,27 @@ public static class LetExpr implements Expr, MaybePrimitiveExpr{
 								init = new StaticMethodExpr("", 0, 0, null, RT.class, "doubleCast", RT.vector(init));
 							}
 						//sequential enhancement of env (like Lisp let*)
-						LocalBinding lb = registerLocal(sym, tagOf(sym), init,false);
-						BindingInit bi = new BindingInit(lb, init);
-						bindingInits = bindingInits.cons(bi);
+						try
+							{
+							if(isLoop)
+								{
+	                            Var.pushThreadBindings(
+									RT.map(CLEAR_PATH, clearpath,
+	                                       CLEAR_ROOT, clearroot,
+	                                       NO_RECUR, null));
 
-						if(isLoop)
-							loopLocals = loopLocals.cons(lb);
+								}
+							LocalBinding lb = registerLocal(sym, tagOf(sym), init,false);
+							BindingInit bi = new BindingInit(lb, init);
+							bindingInits = bindingInits.cons(bi);
+							if(isLoop)
+								loopLocals = loopLocals.cons(lb);
+							}
+						finally
+							{
+							if(isLoop)
+							    Var.popThreadBindings();
+							}
 						}
 					if(isLoop)
 						LOOP_LOCALS.set(loopLocals);
@@ -6280,11 +6335,10 @@ public static class LetExpr implements Expr, MaybePrimitiveExpr{
 					try {
 						if(isLoop)
 							{
-							PathNode root = new PathNode(PATHTYPE.PATH, (PathNode) CLEAR_PATH.get());
-                                                        Var.pushThreadBindings(
-								RT.map(CLEAR_PATH, new PathNode(PATHTYPE.PATH,root),
-                                                                       CLEAR_ROOT, new PathNode(PATHTYPE.PATH,root),
-                                                                       NO_RECUR, null));
+                            Var.pushThreadBindings(
+								RT.map(CLEAR_PATH, clearpath,
+                                       CLEAR_ROOT, clearroot,
+                                       NO_RECUR, null));
                                                        
 							}
 						bodyExpr = (new BodyExpr.Parser()).parse(isLoop ? C.RETURN : context, body);

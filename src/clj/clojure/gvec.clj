@@ -10,6 +10,8 @@
 
 (in-ns 'clojure.core)
 
+(import '(clojure.lang Murmur3))
+
 ;(set! *warn-on-reflection* true)
 
 (deftype VecNode [edit arr])
@@ -132,7 +134,9 @@
                (.equals (.nth this i) (nth o i)) (recur (inc i))
                :else false)))
      (or (instance? clojure.lang.Sequential o) (instance? java.util.List o))
-       (.equals (seq this) (seq o))
+       (if-let [st (seq this)]
+         (.equals st (seq o))
+         (nil? (seq o)))
      :else false))
 
   ;todo - cache
@@ -144,6 +148,11 @@
           (recur (unchecked-add-int (unchecked-multiply-int 31 hash) 
                                 (clojure.lang.Util/hash val)) 
                  (inc i))))))
+
+  ;todo - cache
+  clojure.lang.IHashEq
+  (hasheq [this]
+    (Murmur3/hashOrdered this))
 
   clojure.lang.Counted
   (count [_] cnt)

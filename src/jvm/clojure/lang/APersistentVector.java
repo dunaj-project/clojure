@@ -428,7 +428,7 @@ public int compareTo(Object o){
 	return 0;
 }
 
-    static class Seq extends ASeq implements IndexedSeq, IReduce{
+    public static class Seq extends ASeq implements IndexedSeq, IReduce{
 	//todo - something more efficient
 	final IPersistentVector v;
 	final int i;

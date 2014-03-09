@@ -16,6 +16,8 @@ import java.lang.ref.Reference;
 import java.math.BigInteger;
 import java.util.Collection;
 import java.util.Map;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.lang.ref.SoftReference;
 import java.lang.ref.ReferenceQueue;
@@ -170,6 +172,14 @@ public static int hasheq(Object o){
 		return Numbers.hasheq((Number)o);
 	if(o instanceof String)
 		return Murmur3.hashUnencodedChars((CharSequence) o);
+	if(o instanceof Map)
+		return Murmur3.hashUnordered(((Map) o).entrySet());
+	if(o instanceof Map.Entry)
+		return Murmur3.hashOrdered(PersistentList.EMPTY.cons(((Map.Entry) o).getValue()).cons(((Map.Entry) o).getKey()));
+	if(o instanceof Set)
+		return Murmur3.hashUnordered((Set) o);
+	if(o instanceof List)
+		return Murmur3.hashOrdered((List) o);
 	return o.hashCode();
 }
 

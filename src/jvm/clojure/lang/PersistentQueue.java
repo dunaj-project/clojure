@@ -27,11 +27,24 @@ final public static PersistentQueue EMPTY = new PersistentQueue(null, 0, null, n
 
 //*
 final int cnt;
-final ISeq f;
-final PersistentVector r;
+public final ISeq f;
+public final PersistentVector r;
 //static final int INITIAL_REAR_SIZE = 4;
 int _hash = -1;
 int _hasheq = -1;
+
+public static PersistentQueue createFromColl(IPersistentMap meta, Seqable coll) {
+        ISeq seq = coll.seq();
+        int count = -1;
+        if (coll instanceof Counted) {
+                count = ((Counted)coll).count();
+        } else if (coll instanceof IPersistentCollection) {
+                count = ((IPersistentCollection)coll).count();
+        } else {
+                count = ((IPersistentCollection)seq).count();
+        }
+        return new PersistentQueue(meta, count, seq, null);
+}
 
 PersistentQueue(IPersistentMap meta, int cnt, ISeq f, PersistentVector r){
 	super(meta);

@@ -28,7 +28,7 @@ import java.util.Map;
 
 public class PersistentArrayMap extends APersistentMap implements IObj, IEditableCollection {
 
-final Object[] array;
+public final Object[] array;
 static final int HASHTABLE_THRESHOLD = 16;
 
 public static final PersistentArrayMap EMPTY = new PersistentArrayMap();

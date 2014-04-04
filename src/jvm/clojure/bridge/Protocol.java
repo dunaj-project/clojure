@@ -90,9 +90,11 @@ public class Protocol {
     static public Var PSEQABLE = null;
     static public Var PLOOKUP = null;
     static public Var PINDEXED = null;
+    static public Var PCOUNTED = null;
     static public Var SEQ = null;
     static public Var GET = null;
     static public Var NTH = null;
+    static public Var COUNT = null;
 
     public static void init() {
         CLOJURE_NS = namespace("clojure.core");
@@ -110,9 +112,11 @@ public class Protocol {
         PSEQABLE = proto(COLL_NS, "ISeqable");
         PLOOKUP = proto(COLL_NS, "ILookup");
         PINDEXED = proto(COLL_NS, "IIndexed");
+        PCOUNTED = proto(COLL_NS, "ICounted");
         SEQ = protoMethod(PSEQABLE, "-seq");
         GET = protoMethod(PLOOKUP, "-get");
         NTH = protoMethod(PINDEXED, "-nth");
+        COUNT = protoMethod(PCOUNTED, "-count");
     }
 
     ////////// clojure.bridge
@@ -139,6 +143,10 @@ public class Protocol {
         return satisfies(PSEQABLE, o);
     }
 
+    public static boolean satisfiesICount(Object o) {
+        return satisfies(PCOUNTED, o);
+    }
+
     public static boolean satisfiesILookup(Object o) {
         return satisfies(PLOOKUP, o);
     }
@@ -157,6 +165,10 @@ public class Protocol {
 
     public static Object bridgeILookupGet(Object o, Object k, Object nf) {
         return GET.invoke(o, k, nf);
+    }
+
+    public static Object bridgeICountedCount(Object o) {
+        return COUNT.invoke(o);
     }
 
 }

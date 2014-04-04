@@ -600,6 +600,8 @@ static int countFrom(Object o){
 		return ((Map) o).size();
 	else if(o.getClass().isArray())
 		return Array.getLength(o);
+        else if(Protocol.satisfiesICount(o))
+		return ((Integer)Protocol.bridgeICountedCount(o)).intValue();
 
 	throw new UnsupportedOperationException("count not supported on this type: " + o.getClass().getSimpleName());
 }

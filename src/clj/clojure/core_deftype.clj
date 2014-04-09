@@ -130,7 +130,9 @@
                        (cons name (maybe-destructured params body)))
                      (apply concat (vals impls)))]
     (when-let [bad-opts (seq (remove #{:no-print} (keys opts)))]
-      (throw (IllegalArgumentException. (apply print-str "Unsupported option(s) -" bad-opts))))
+      (throw (IllegalArgumentException.
+              ^java.lang.String
+              (apply print-str "Unsupported option(s) -" bad-opts))))
     [interfaces methods opts]))
 
 (defmacro reify 
@@ -608,11 +610,12 @@
      (if (.isAssignableFrom a b) b a)))
 
 (defn find-protocol-impl [protocol x]
-  (if (and (instance? (:on-interface protocol) x)
-           (or (not (:marker-interface protocol))
-               (:marker-soft protocol)
-               (instance? (:marker-interface protocol) x)
-               (some #(instance? % x) (:marker-types protocol))))
+  (if (and (instance? ^java.lang.Class (:on-interface protocol) x)
+           (or (:marker-soft protocol)
+               (not (:marker-interface protocol))
+               (instance? ^java.lang.Class (:marker-interface protocol) x)
+               (some #(instance? ^java.lang.Class % x)
+                     (:marker-types protocol))))
     (or x true)
     (let [c (class x)
           impl #(get (:impls protocol) %)]

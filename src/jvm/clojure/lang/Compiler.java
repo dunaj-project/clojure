@@ -103,6 +103,7 @@ static final Symbol IN_NS = Symbol.intern("in-ns");
 
 static final Symbol QDEF = Symbol.intern("clojure.core", "def");
 static final Symbol QLOOP = Symbol.intern("clojure.core", "loop*");
+static final Symbol QILOOP = Symbol.intern("clojure.core", "iloop*");
 static final Symbol QRECUR = Symbol.intern("clojure.core", "recur");
 static final Symbol QIF = Symbol.intern("clojure.core", "if"); // might have missed some
 static final Symbol QCASE = Symbol.intern("clojure.core", "case*");
@@ -130,6 +131,7 @@ static final Symbol QAMP = Symbol.intern("clojure.core", "&");
 static final public IPersistentMap qualifiedSpecials = PersistentHashMap.create(
 	QDEF, new DefExpr.Parser(),
 	QLOOP, new LetExpr.Parser(),
+	QILOOP, new LetExpr.Parser(),
 	QRECUR, new RecurExpr.Parser(),
 	QIF, new IfExpr.Parser(),
 	QCASE, new CaseExpr.Parser(),
@@ -6248,7 +6250,8 @@ public static class LetExpr implements Expr, MaybePrimitiveExpr{
 		public Expr parse(C context, Object frm) {
 			ISeq form = (ISeq) frm;
 			//(let [var val var2 val2 ...] body...)
-			boolean isLoop = RT.first(form).equals(LOOP) || RT.first(form).equals(QLOOP);
+			boolean isLoop = RT.first(form).equals(LOOP) || RT.first(form).equals(QLOOP) || RT.first(form).equals(QILOOP);
+			boolean isIntLoop = RT.first(form).equals(QILOOP);
 			if(!(RT.second(form) instanceof IPersistentVector))
 				throw new IllegalArgumentException("Bad binding form, expected vector");
 
@@ -6307,10 +6310,13 @@ public static class LetExpr implements Expr, MaybePrimitiveExpr{
 								if(RT.booleanCast(RT.WARN_ON_REFLECTION.deref()))
 									RT.errPrintWriter().println("Auto-boxing loop arg: " + sym);
 								}
-							else if(maybePrimitiveType(init) == int.class)
-								init = new StaticMethodExpr("", 0, 0, null, RT.class, "longCast", RT.vector(init));
-							else if(maybePrimitiveType(init) == float.class)
-								init = new StaticMethodExpr("", 0, 0, null, RT.class, "doubleCast", RT.vector(init));
+							else if(!isIntLoop)
+                                                            {
+                                                                if(maybePrimitiveType(init) == int.class)
+                                                                    init = new StaticMethodExpr("", 0, 0, null, RT.class, "longCast", RT.vector(init));
+                                                                else if(maybePrimitiveType(init) == float.class)
+                                                                    init = new StaticMethodExpr("", 0, 0, null, RT.class, "doubleCast", RT.vector(init));
+                                                            }
 							}
 						//sequential enhancement of env (like Lisp let*)
 						try

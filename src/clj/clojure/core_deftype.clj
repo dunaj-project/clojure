@@ -10,6 +10,8 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;; definterface ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;(set! *warn-on-reflection* true)
+
 (defonce ^:private host-lock #{})
 
 (def ^:dynamic *silent-parasite* false)
@@ -609,10 +611,10 @@
   ([^Class a ^Class b]
      (if (.isAssignableFrom a b) b a)))
 
-(defn find-protocol-impl [protocol x]
+(defn find-protocol-impl-old [protocol x]
   (if (and (instance? ^java.lang.Class (:on-interface protocol) x)
-           (or (:marker-soft protocol)
-               (not (:marker-interface protocol))
+           (or (not (:marker-interface protocol))
+               (:marker-soft protocol)
                (instance? ^java.lang.Class (:marker-interface protocol) x)
                (some #(instance? ^java.lang.Class % x)
                      (:marker-types protocol))))
@@ -625,6 +627,24 @@
                      (when-let [t (reduce1 pref (filter impl (disj (supers c) Object)))]
                        (impl t))
                      (impl Object)))))))
+
+(defn find-protocol-impl [protocol x]
+  (if (and (instance? ^java.lang.Class (:on-interface protocol) x)
+           (or (not (:marker-interface protocol))
+               (:marker-soft protocol)
+               (instance? ^java.lang.Class (:marker-interface protocol) x)
+               (some #(instance? ^java.lang.Class % x)
+                     (:marker-types protocol))))
+    (or x true)
+    (let [c (class x)
+          impl #(get (:impls protocol) %)]
+      (or (impl c)
+          (and c (or (first (remove nil? (map impl (butlast (super-chain c)))))
+                     (when-let [t (reduce1 pref (filter impl (disj (supers c) Object)))]
+                       (impl t))
+                     (impl Object)))
+          (and c (.isArray c) (impl :array))
+          ))))
 
 (defn find-protocol-method [protocol methodk x]
   (get (find-protocol-impl protocol x) methodk))
@@ -649,7 +669,47 @@
   [protocol]
   (keys (:impls protocol)))
 
-(defn satisfies? 
+(defrecord PRR [satisfies-dispatch impls on-interface
+              marker-interface marker-soft marker-types])
+
+(def ep (->PRR nil nil nil nil nil nil))
+
+(defn ^java.lang.Boolean satisfies-direct?
+  ^boolean [^clojure.core.PRR protocol x]
+  (and (instance? ^java.lang.Class (.-on-interface protocol) x)
+       (or (not (.-marker-interface protocol))
+           (boolean (.-marker-soft protocol))
+           (instance? ^java.lang.Class (.-marker-interface protocol) x)
+           (boolean (some #(instance? ^java.lang.Class % x)
+                          (.-marker-types protocol))))))
+
+#_(
+
+   (keys (:impls dunaj.coll/IRed))
+   (keys (:impls dunaj.coll/ISectionable))
+
+   )
+
+(defn satisfies?
+  "Returns true if x satisfies the protocol"
+  {:added "1.2"
+   :tag Boolean}
+  ^boolean [^clojure.core.PRR protocol x]
+  (boolean (or (satisfies-direct? protocol x)
+               (let [c (class x)
+                     impl #(get (.-impls protocol) %)]
+                 (or (impl c)
+                     (let [arr ^objects (.-satisfies-dispatch protocol)]
+                       (and c arr
+                            (let [l (alength arr)]
+                              (loop [i 0]
+                                (cond (== i l) false
+                                      (instance? ^java.lang.Class (aget arr i) x) true
+                                      :else (recur (unchecked-inc i)))))))
+                     (and c (.isArray c) (impl :array))
+                     )))))
+
+#_(defn satisfies?
   "Returns true if x satisfies the protocol"
   {:added "1.2"
    :tag Boolean}
@@ -780,7 +840,8 @@
                                (:arglists sig))))
                       (vals sigs))]
   `(do
-     (defonce ~name {})
+     (defonce ~name ep)
+     (alter-var-root (var ~name) #(merge ep %))
      (gen-interface :name ~iname :methods ~meths)
      (alter-meta! (var ~name) assoc :doc ~(:doc opts))
      (alter-meta! (var ~name) merge ~(meta name))
@@ -844,7 +905,8 @@
                                (:arglists sig))))
                       (vals sigs))]
   `(do
-     (defonce ~name {})
+     (defonce ~name ep)
+     (alter-var-root (var ~name) #(merge ep %))
      (gen-interface :name ~imarker :methods ())
      (alter-meta! (var ~name) assoc :doc ~(:doc opts))
      (alter-meta! (var ~name) merge ~(meta name))
@@ -936,6 +998,9 @@
   [name & opts+sigs]
   (emit-protocol2 name opts+sigs))
 
+(defn conj-arr [arr t]
+  (to-array (cons t (seq arr))))
+
 (defn extend 
   "Implementations of protocol methods can be provided using the extend construct:
 
@@ -997,13 +1062,15 @@
                      (:var proto)))))
       (if array?
         (-reset-methods (alter-var-root (:var proto) assoc-in [:impls atype] mmap))
-        (if-not (implements? proto atype)
-          (-reset-methods (alter-var-root (:var proto) assoc-in [:impls atype] mmap))
-          (if (empty? mmap)
-            (alter-var-root (:var proto) update-in [:marker-types] conj atype)
-            (throw (IllegalArgumentException. 
-                    (str vac " already directly implements " (:on-interface proto) " for marker protocol:"  
-                         (:var proto) ". Maybe you wanted to just mark the type?")))))))))
+        (do
+          (alter-var-root (:var proto) update-in [:satisfies-dispatch] conj-arr atype)
+          (if-not (implements? proto atype)
+            (-reset-methods (alter-var-root (:var proto) assoc-in [:impls atype] mmap))
+            (if (empty? mmap)
+              (alter-var-root (:var proto) update-in [:marker-types] conj atype)
+              (throw (IllegalArgumentException. 
+                      (str vac " already directly implements " (:on-interface proto) " for marker protocol:"  
+                           (:var proto) ". Maybe you wanted to just mark the type?"))))))))))
 
 (defn- emit-impl [[p fs]]
   [p (zipmap (map #(-> % first name keyword) fs)

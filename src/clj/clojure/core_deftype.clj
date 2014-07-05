@@ -999,7 +999,7 @@
   (emit-protocol2 name opts+sigs))
 
 (defn conj-arr [arr t]
-  (to-array (cons t (seq arr))))
+  (to-array (seq (set (remove nil? (cons t (seq arr)))))))
 
 (defn extend 
   "Implementations of protocol methods can be provided using the extend construct:

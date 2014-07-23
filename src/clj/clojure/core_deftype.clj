@@ -578,9 +578,11 @@
        ~(emit-deftype* name gname (vec hinted-fields)
                        (vec interfaces) methods)
        ~(build-positional-factory gname classname fields)
-       (def ~name {:on '~classname
-                   :on-class ~classname
-                   ::type true}))))
+       (def ~(with-meta name nil)
+         {:on '~classname
+          :on-class ~classname
+          :tsig ~(:tsig (meta name))
+          ::type true}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;; protocols ;;;;;;;;;;;;;;;;;;;;;;;;
 

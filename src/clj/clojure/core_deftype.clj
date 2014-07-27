@@ -61,6 +61,23 @@
        (gen-interface :name ~cname :methods ~(vec (map psig sigs)))
        (import ~cname))))
 
+(defmacro definterface2
+  "Creates a new Java interface with the given name and method sigs.
+  The method return types and parameter types may be specified with type hints,
+  defaulting to Object if omitted.
+
+  (definterface MyInterface
+    (^int method1 [x])
+    (^Bar method2 [^Baz b ^Quux q]))"
+  {:added "1.2"} ;; Present since 1.2, but made public in 1.5.
+  [name & sigs]
+  (let [tag (fn [x] (or (:tag (meta x)) Object))
+        psig (fn [[name [& args]]]
+               (vector name (vec (map tag args)) (tag name) (map meta args)))
+        cname (with-meta (symbol (str (namespace-munge *ns*) "." name)) (meta name))]
+    `(let [] 
+       (gen-interface :name ~cname :methods ~(vec (map psig sigs))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;; reify/deftype ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- parse-opts [s]
@@ -873,7 +890,8 @@
 
 (defn- emit-protocol2 [name opts+sigs]
   (let [iname (:on-interface (meta name))
-        soft-marker? (boolean (:soft (meta name)))
+        soft-marker? (not (:distinct (meta name)))
+        forbid-extensions? (:forbid-extensions (meta name))
         imarker (symbol (str (munge (namespace-munge *ns*)) "." (munge name) (munge "MARKER")))
         [opts sigs]
         (loop [opts {:on (list 'clojure.core/quote iname) :on-interface iname} sigs opts+sigs]
@@ -921,6 +939,7 @@
                        :marker-interface ~imarker
                        :marker-types #{}
                        :marker-soft ~soft-marker?
+                       :forbid-extensions ~forbid-extensions?
                        :sigs '~sigs 
                        :var (var ~name)
                        :method-map 
@@ -1056,6 +1075,9 @@
                 (str proto " is not a protocol"))))
       (when (and (:marker proto) (not (empty? mmap))
                  (false? *silent-parasite*))
+        (when (:forbid-extensions proto)
+          (throw (IllegalArgumentException.
+                  (str "Extensions are forbidden for protocol " (:var proto)))))
         (println (str "Warning: " vac
                       " class is extending parasite protocol " (:var proto))))
       (when (and (not (:marker proto)) (not array?) (implements? proto atype))

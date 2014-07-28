@@ -825,17 +825,79 @@
                      (str "method " (.sym v) " of protocol " (.sym p))
                      (str "function " (.sym v)))))))))
 
-(defn- emit-protocol [name opts+sigs]
+;; massive hacks, i'm really ashamed
+
+(defmacro finish-emit-protocol [name opts+sigs]
   (let [iname (symbol (str (munge (namespace-munge *ns*)) "." (munge name)))
         [opts sigs]
         (loop [opts {:on (list 'clojure.core/quote iname) :on-interface iname} sigs opts+sigs]
-          (condp #(%1 %2) (first sigs) 
+          (condp #(%1 %2) (first sigs)
             string? (recur (assoc opts :doc (first sigs)) (next sigs))
             keyword? (recur (assoc opts (first sigs) (second sigs)) (nnext sigs))
             [opts sigs]))
         sigs (when sigs
                (reduce1 (fn [m s]
                           (let [name-meta (meta (first s))
+                                [oh hints] (when-let [pf (:pf name-meta)] (pf))
+                                name-meta (dissoc name-meta :pf)
+                                name-meta (if (and oh (not (:tag name-meta)))
+                                            (assoc name-meta :tag oh)
+                                            name-meta)
+                                name-meta (if (and hints (not (:hints name-meta)))
+                                            (assoc name-meta :hints hints)
+                                            name-meta)
+                                mname (with-meta (first s) nil)
+                                [arglists doc]
+                                (loop [as [] rs (rest s)]
+                                  (if (vector? (first rs))
+                                    (recur (conj as (first rs)) (next rs))
+                                    [(seq as) (first rs)]))
+                                doc (or doc (get name-meta :doc))]
+                            (when (some #{0} (map count arglists))
+                              (throw (IllegalArgumentException. (str "Definition of function " mname " in protocol " name " must take at least one arg."))))
+                            (when (m (keyword mname))
+                              (throw (IllegalArgumentException. (str "Function " mname " in protocol " name " was redefined. Specify all arities in single definition."))))
+                            (assoc m (keyword mname)
+                                   (merge name-meta
+                                          {:name (vary-meta mname assoc :doc doc :arglists arglists)
+                                           :arglists arglists
+                                           :doc doc}))))
+                        {} sigs))]
+  `(do
+     (alter-var-root (var ~name) merge 
+                     (assoc ~opts
+                       ::protocol true
+                       :sigs '~sigs 
+                       :var (var ~name)
+                       :method-map 
+                         ~(and (:on opts)
+                               (apply hash-map 
+                                      (mapcat 
+                                       (fn [s] 
+                                         [(keyword (:name s)) (keyword (or (:on s) (:name s)))])
+                                       (vals sigs))))
+                       :method-builders 
+                        ~(apply hash-map 
+                                (mapcat 
+                                 (fn [s]
+                                   [`(intern *ns* (with-meta '~(:name s) (merge '~s {:protocol (var ~name)})))
+                                    (emit-method-builder (:on-interface opts) (:name s) (:on s) (:arglists s))])
+                                 (vals sigs)))))
+     (-reset-methods ~name)
+     '~name)))
+
+(defn- emit-protocol [name opts+sigs]
+  (let [iname (symbol (str (munge (namespace-munge *ns*)) "." (munge name)))
+        [opts sigs]
+        (loop [opts {:on (list 'clojure.core/quote iname) :on-interface iname} sigs opts+sigs]
+          (condp #(%1 %2) (first sigs)
+            string? (recur (assoc opts :doc (first sigs)) (next sigs))
+            keyword? (recur (assoc opts (first sigs) (second sigs)) (nnext sigs))
+            [opts sigs]))
+        sigs (when sigs
+               (reduce1 (fn [m s]
+                          (let [name-meta (meta (first s))
+                                name-meta (dissoc name-meta :pf)
                                 mname (with-meta (first s) nil)
                                 [arglists doc]
                                 (loop [as [] rs (rest s)]
@@ -865,10 +927,56 @@
      (alter-meta! (var ~name) assoc :doc ~(:doc opts))
      (alter-meta! (var ~name) merge ~(meta name))
      ~(when sigs
-        `(#'assert-same-protocol (var ~name) '~(map :name (vals sigs))))
+        `(#'assert-same-protocol (var ~name) '~(map :name (vals sigs)))))))
+
+(defmacro finish-emit-protocol2 [name opts+sigs]
+  (let [iname (:on-interface (meta name))
+        soft-marker? (not (:distinct (meta name)))
+        forbid-extensions? (:forbid-extensions (meta name))
+        imarker (symbol (str (munge (namespace-munge *ns*)) "." (munge name) (munge "MARKER")))
+        [opts sigs]
+        (loop [opts {:on (list 'clojure.core/quote iname) :on-interface iname} sigs opts+sigs]
+          (condp #(%1 %2) (first sigs) 
+            string? (recur (assoc opts :doc (first sigs)) (next sigs))
+            keyword? (recur (assoc opts (first sigs) (second sigs)) (nnext sigs))
+            [opts sigs]))
+        sigs (when sigs
+               (reduce1 (fn [m s]
+                          (let [name-meta (meta (first s))
+                                [oh hints] (when-let [pf (:pf name-meta)] (pf))
+                                name-meta (dissoc name-meta :pf)
+                                name-meta (if (and oh (not (:tag name-meta)))
+                                            (assoc name-meta :tag oh)
+                                            name-meta)
+                                name-meta (if (and hints (not (:hints name-meta)))
+                                            (assoc name-meta :hints hints)
+                                            name-meta)
+                                mname (with-meta (first s) nil)
+                                [arglists doc]
+                                (loop [as [] rs (rest s)]
+                                  (if (vector? (first rs))
+                                    (recur (conj as (first rs)) (next rs))
+                                    [(seq as) (first rs)]))
+                                doc (or doc (get name-meta :doc))]
+                            (when (some #{0} (map count arglists))
+                              (throw (IllegalArgumentException. (str "Definition of function " mname " in protocol " name " must take at least one arg."))))
+                            (when (m (keyword mname))
+                              (throw (IllegalArgumentException. (str "Function " mname " in protocol " name " was redefined. Specify all arities in single definition."))))
+                            (assoc m (keyword mname)
+                                   (merge name-meta
+                                          {:name (vary-meta mname assoc :doc doc :arglists arglists)
+                                           :arglists arglists
+                                           :doc doc}))))
+                        {} sigs))]
+  `(do
      (alter-var-root (var ~name) merge 
                      (assoc ~opts
                        ::protocol true
+                       :marker '~imarker
+                       :marker-interface ~imarker
+                       :marker-types #{}
+                       :marker-soft ~soft-marker?
+                       :forbid-extensions ~forbid-extensions?
                        :sigs '~sigs 
                        :var (var ~name)
                        :method-map 
@@ -883,7 +991,7 @@
                                 (mapcat 
                                  (fn [s]
                                    [`(intern *ns* (with-meta '~(:name s) (merge '~s {:protocol (var ~name)})))
-                                    (emit-method-builder (:on-interface opts) (:name s) (:on s) (:arglists s))])
+                                    (emit-method-builder2 (:on-interface opts) (:name s) (:on s) (:arglists s) (:hints s))])
                                  (vals sigs)))))
      (-reset-methods ~name)
      '~name)))
@@ -902,6 +1010,7 @@
         sigs (when sigs
                (reduce1 (fn [m s]
                           (let [name-meta (meta (first s))
+                                name-meta (dissoc name-meta :pf)
                                 mname (with-meta (first s) nil)
                                 [arglists doc]
                                 (loop [as [] rs (rest s)]
@@ -940,24 +1049,7 @@
                        :marker-types #{}
                        :marker-soft ~soft-marker?
                        :forbid-extensions ~forbid-extensions?
-                       :sigs '~sigs 
-                       :var (var ~name)
-                       :method-map 
-                         ~(and (:on opts)
-                               (apply hash-map 
-                                      (mapcat 
-                                       (fn [s] 
-                                         [(keyword (:name s)) (keyword (or (:on s) (:name s)))])
-                                       (vals sigs))))
-                       :method-builders 
-                        ~(apply hash-map 
-                                (mapcat 
-                                 (fn [s]
-                                   [`(intern *ns* (with-meta '~(:name s) (merge '~s {:protocol (var ~name)})))
-                                    (emit-method-builder2 (:on-interface opts) (:name s) (:on s) (:arglists s) (:hints s))])
-                                 (vals sigs)))))
-     (-reset-methods ~name)
-     '~name)))
+                       :var (var ~name))))))
 
 (defmacro defprotocol 
   "A protocol is a named set of named methods and their signatures:
@@ -1011,13 +1103,17 @@
   => 17"
   {:added "1.2"} 
   [name & opts+sigs]
-  (emit-protocol name opts+sigs))
+  `(do
+     ~(emit-protocol name opts+sigs)
+     (finish-emit-protocol ~name ~opts+sigs)))
 
 (defmacro defprotocol2
   "Like defprotocol but parasites on existing interface."
   {:added "1.2"} 
   [name & opts+sigs]
-  (emit-protocol2 name opts+sigs))
+  `(do
+     ~(emit-protocol2 name opts+sigs)
+     (finish-emit-protocol2 ~name ~opts+sigs)))
 
 (defn conj-arr [arr t]
   (to-array (seq (set (remove nil? (cons t (seq arr)))))))

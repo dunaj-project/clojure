@@ -1169,11 +1169,11 @@
       (when-not (protocol? proto)
         (throw (IllegalArgumentException.
                 (str proto " is not a protocol"))))
-      (when (and (:marker proto) (not (empty? mmap))
+      (when (:forbid-extensions proto)
+        (throw (IllegalArgumentException.
+                (str "Extensions are forbidden for protocol " (:var proto)))))
+      #_(when (and (:marker proto) (not (empty? mmap))
                  (false? *silent-parasite*))
-        (when (:forbid-extensions proto)
-          (throw (IllegalArgumentException.
-                  (str "Extensions are forbidden for protocol " (:var proto)))))
         (println (str "Warning: " vac
                       " class is extending parasite protocol " (:var proto))))
       (when (and (not (:marker proto)) (not array?) (implements? proto atype))

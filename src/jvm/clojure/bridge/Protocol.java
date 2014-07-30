@@ -1,5 +1,5 @@
 /**
- *   Copyright (c) Jozef Wagner. All rights reserved.
+ *   Copyright (c) 2014, Jozef Wagner. All rights reserved.
  *   The use and distribution terms for this software are covered by the
  *   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
  *   which can be found in the file epl-v10.html at the root of this distribution.
@@ -25,13 +25,11 @@ import clojure.lang.PersistentArrayMap;
  *  possible, a bridge is implemented which injects protocol logic
  *  into existing java sources, so that we can have both clojure
  *  original interfaces and dunaj protocols. The drawback is that this
- *  bridge slows down things a lot, mainly Util.equiv, which is used
- *  everywhere.
+ *  bridge slows down things a bit.
  *
  *  Dummy versions of protocols, their methods and satisfies? function
  *  are created so that protocol methods can be called before they are
- *  really created. This requires that we have compiled protocol
- *  interface at hand.
+ *  really created. 
  */
 
 public class Protocol {
@@ -86,12 +84,9 @@ public class Protocol {
     ////////// dunaj.coll
     static public Namespace COLL_NS = null;
     static public Var PRED = null;
-    static public Var PITER = null;
-    static public Var PSEQABLE = null;
     static public Var PLOOKUP = null;
     static public Var PINDEXED = null;
     static public Var PCOUNTED = null;
-    static public Var SEQ = null;
     static public Var GET = null;
     static public Var NTH = null;
     static public Var COUNT = null;
@@ -103,17 +98,13 @@ public class Protocol {
         //// clojure.bridge
         BRIDGE_NS = namespace("clojure.bridge");
         RED2SEQ = fun(BRIDGE_NS, "red-to-seq");
-        ITER2SEQ = fun(BRIDGE_NS, "iter-to-seq");
 
         //// dunaj.coll
         COLL_NS = namespace("dunaj.coll");
         PRED = proto(COLL_NS, "IRed");
-        PITER = proto(COLL_NS, "IIterable");
-        PSEQABLE = proto(COLL_NS, "ISeqable");
         PLOOKUP = proto(COLL_NS, "ILookup");
         PINDEXED = proto(COLL_NS, "IIndexed");
         PCOUNTED = proto(COLL_NS, "ICounted");
-        SEQ = protoMethod(PSEQABLE, "-seq");
         GET = protoMethod(PLOOKUP, "-get");
         NTH = protoMethod(PINDEXED, "-nth");
         COUNT = protoMethod(PCOUNTED, "-count");
@@ -125,22 +116,10 @@ public class Protocol {
         return RED2SEQ.invoke(o);
     }
 
-    public static Object bridgeIter2Seq(Object o) {
-        return ITER2SEQ.invoke(o);
-    }
-
     ////////// dunaj.coll
 
     public static boolean satisfiesIRed(Object o) {
         return satisfies(PRED, o);
-    }
-
-    public static boolean satisfiesIIter(Object o) {
-        return satisfies(PITER, o);
-    }
-
-    public static boolean satisfiesISeqable(Object o) {
-        return satisfies(PSEQABLE, o);
     }
 
     public static boolean satisfiesICount(Object o) {
@@ -153,10 +132,6 @@ public class Protocol {
 
     public static boolean satisfiesIIndexed(Object o) {
         return satisfies(PINDEXED, o);
-    }
-
-    public static Object bridgeISeqableSeq(Object o) {
-        return SEQ.invoke(o);
     }
 
     public static Object bridgeIIndexedNth(Object o, Object k, Object nf) {

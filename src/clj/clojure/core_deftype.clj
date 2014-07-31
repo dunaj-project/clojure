@@ -927,7 +927,12 @@
      (alter-meta! (var ~name) assoc :doc ~(:doc opts))
      (alter-meta! (var ~name) merge ~(meta name))
      ~(when sigs
-        `(#'assert-same-protocol (var ~name) '~(map :name (vals sigs)))))))
+        `(#'assert-same-protocol (var ~name) '~(map :name (vals sigs))))
+     (alter-var-root (var ~name) merge 
+                     (assoc ~opts
+                       ::protocol true
+                       :sigs '~sigs 
+                       :var (var ~name))))))
 
 (defmacro finish-emit-protocol2 [name opts+sigs]
   (let [iname (:on-interface (meta name))

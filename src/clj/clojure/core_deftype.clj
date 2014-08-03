@@ -724,9 +724,7 @@
                               (loop [i 0]
                                 (cond (== i l) false
                                       (instance? ^java.lang.Class (aget arr i) x) true
-                                      :else (recur (unchecked-inc i)))))))
-                     (and c (.isArray c) (impl :array))
-                     )))))
+                                      :else (recur (unchecked-inc i))))))))))))
 
 #_(defn satisfies?
   "Returns true if x satisfies the protocol"
@@ -1188,7 +1186,8 @@
       (if array?
         (-reset-methods (alter-var-root (:var proto) assoc-in [:impls atype] mmap))
         (do
-          (alter-var-root (:var proto) update-in [:satisfies-dispatch] conj-arr atype)
+          (when-not (identical? java.lang.Object atype)
+            (alter-var-root (:var proto) update-in [:satisfies-dispatch] conj-arr atype))
           (if-not (implements? proto atype)
             (-reset-methods (alter-var-root (:var proto) assoc-in [:impls atype] mmap))
             (if (empty? mmap)

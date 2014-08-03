@@ -770,7 +770,9 @@ static public Object contains(Object coll, Object key){
 	else if(key instanceof Number && (coll instanceof String || coll.getClass().isArray())) {
 		int n = ((Number) key).intValue();
 		return n >= 0 && n < count(coll);
-	}
+	} else if(Protocol.satisfiesILookup(coll))
+            return Protocol.bridgeILookupContains(coll, key);
+
 	throw new IllegalArgumentException("contains? not supported on type: " + coll.getClass().getName());
 }
 

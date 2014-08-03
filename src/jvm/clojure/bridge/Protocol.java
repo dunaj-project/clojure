@@ -88,6 +88,7 @@ public class Protocol {
     static public Var PINDEXED = null;
     static public Var PCOUNTED = null;
     static public Var GET = null;
+    static public Var CONTAINS = null;
     static public Var NTH = null;
     static public Var COUNT = null;
 
@@ -106,6 +107,7 @@ public class Protocol {
         PINDEXED = proto(COLL_NS, "IIndexed");
         PCOUNTED = proto(COLL_NS, "ICounted");
         GET = protoMethod(PLOOKUP, "-get");
+        CONTAINS = protoMethod(PLOOKUP, "-contains?");
         NTH = protoMethod(PINDEXED, "-nth");
         COUNT = protoMethod(PCOUNTED, "-count");
     }
@@ -140,6 +142,10 @@ public class Protocol {
 
     public static Object bridgeILookupGet(Object o, Object k, Object nf) {
         return GET.invoke(o, k, nf);
+    }
+
+    public static Object bridgeILookupContains(Object o, Object k) {
+        return CONTAINS.invoke(o, k);
     }
 
     public static Object bridgeICountedCount(Object o) {

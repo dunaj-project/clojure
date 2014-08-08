@@ -570,7 +570,7 @@
         hinted-fields fields
         fields (vec (map #(with-meta % nil) fields))
         [field-args over] (split-at 20 fields)]
-    `(let []
+    `(do
        ~(emit-deftype* name gname (vec hinted-fields) (vec interfaces) methods)
        (import ~classname)
        ~(build-positional-factory gname classname fields)
@@ -590,7 +590,7 @@
         hinted-fields fields
         fields (vec (map #(with-meta % nil) fields))
         [field-args over] (split-at 20 fields)]
-    `(let []
+    `(do
        (declare ~(symbol (str  '-> gname)))
        ~(emit-deftype* name gname (vec hinted-fields)
                        (vec interfaces) methods)

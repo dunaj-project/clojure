@@ -1172,7 +1172,8 @@
       (when-not (protocol? proto)
         (throw (IllegalArgumentException.
                 (str proto " is not a protocol"))))
-      (when (:forbid-extensions proto)
+      (when (and (:forbid-extensions proto)
+                 (not (implements? proto atype)))
         (throw (IllegalArgumentException.
                 (str "Extensions are forbidden for protocol " (:var proto)))))
       #_(when (and (:marker proto) (not (empty? mmap))

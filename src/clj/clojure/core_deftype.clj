@@ -827,6 +827,7 @@
 
 (defmacro finish-emit-protocol [name opts+sigs]
   (let [iname (symbol (str (munge (namespace-munge *ns*)) "." (munge name)))
+        forbid-extensions? (:forbid-extensions (meta name))
         [opts sigs]
         (loop [opts {:on (list 'clojure.core/quote iname) :on-interface iname} sigs opts+sigs]
           (condp #(%1 %2) (first sigs)
@@ -867,6 +868,7 @@
                        ::protocol true
                        :sigs '~sigs 
                        :var (var ~name)
+                       :forbid-extensions ~forbid-extensions?
                        :method-map 
                          ~(and (:on opts)
                                (apply hash-map 
@@ -886,6 +888,7 @@
 
 (defn- emit-protocol [name opts+sigs]
   (let [iname (symbol (str (munge (namespace-munge *ns*)) "." (munge name)))
+        forbid-extensions? (:forbid-extensions (meta name))
         [opts sigs]
         (loop [opts {:on (list 'clojure.core/quote iname) :on-interface iname} sigs opts+sigs]
           (condp #(%1 %2) (first sigs)
@@ -930,6 +933,7 @@
                      (assoc ~opts
                        ::protocol true
                        :sigs '~sigs 
+                       :forbid-extensions ~forbid-extensions?
                        :var (var ~name))))))
 
 (defmacro finish-emit-protocol2 [name opts+sigs]

@@ -300,14 +300,33 @@ static final public Var ADD_ANNOTATIONS = Var.intern(Namespace.findOrCreate(Symb
 static final public Keyword disableLocalsClearingKey = Keyword.intern("disable-locals-clearing");
 static final public Keyword elideMetaKey = Keyword.intern("elide-meta");
 
-static final public Var COMPILER_OPTIONS = Var.intern(Namespace.findOrCreate(Symbol.intern("clojure.core")),
-                                                      Symbol.intern("*compiler-options*"), null).setDynamic();
+static final public Var COMPILER_OPTIONS;
 
 static public Object getCompilerOption(Keyword k){
 	return RT.get(COMPILER_OPTIONS.deref(),k);
 }
 
-static Object elideMeta(Object m){
+    static
+    {
+        Object compilerOptions = null;
+
+        for (Map.Entry e : System.getProperties().entrySet())
+        {
+            String name = (String) e.getKey();
+            String v = (String) e.getValue();
+            if (name.startsWith("clojure.compiler."))
+            {
+                compilerOptions = RT.assoc(compilerOptions,
+                        RT.keyword(null, name.substring(1 + name.lastIndexOf('.'))),
+                        RT.readString(v));
+            }
+        }
+
+        COMPILER_OPTIONS = Var.intern(Namespace.findOrCreate(Symbol.intern("clojure.core")),
+                Symbol.intern("*compiler-options*"), compilerOptions).setDynamic();
+    }
+
+    static Object elideMeta(Object m){
         Collection<Object> elides = (Collection<Object>) getCompilerOption(elideMetaKey);
         if(elides != null)
             {
@@ -609,7 +628,10 @@ static class DefExpr implements Expr{
 			if(!v.ns.equals(currentNS()))
 				{
 				if(sym.ns == null)
+					{
 					v = currentNS().intern(sym);
+					registerVar(v);
+					}
 //					throw Util.runtimeException("Name conflict, can't def " + sym + " because namespace: " + currentNS().name +
 //					                    " refers to:" + v);
 				else
@@ -1723,6 +1745,28 @@ static class StaticMethodExpr extends MethodExpr{
 				.format("Reflection warning, %s:%d:%d - call to static method %s on %s can't be resolved (argument types: %s).\n",
 					SOURCE_PATH.deref(), line, column, methodName, c.getName(), getTypeStringForArgs(args));
 			}
+		if(method != null && RT.booleanCast(RT.UNCHECKED_MATH.deref()) && isBoxedMath(method))
+			{
+			RT.errPrintWriter()
+				.format("Boxed math warning, %s:%d:%d - call: %s.\n",
+						SOURCE_PATH.deref(), line, column, method.toString());
+			}
+	}
+
+	public static boolean isBoxedMath(java.lang.reflect.Method m) {
+		Class c = m.getDeclaringClass();
+		if(c.equals(Numbers.class))
+			{
+			WarnBoxedMath boxedMath = m.getAnnotation(WarnBoxedMath.class);
+			if(boxedMath != null)
+				return boxedMath.value();
+
+			Class[] argTypes = m.getParameterTypes();
+			for(Class argType : argTypes)
+				if(argType.equals(Object.class) || argType.equals(Number.class))
+					return true;
+			}
+		return false;
 	}
 
 	public Object eval() {
@@ -3914,7 +3958,7 @@ static public class FnExpr extends ObjExpr{
 	}
 
 	public Class getJavaClass() {
-		return AFunction.class;
+		return tag != null ? HostExpr.tagToClass(tag) : AFunction.class;
 	}
 
 	protected void emitMethods(ClassVisitor cv){
@@ -6815,6 +6859,16 @@ public static Object macroexpand1(Object x) {
 					{
 						// hide the 2 extra params for a macro
 						throw new ArityException(e.actual - 2, e.name);
+					}
+				catch(Throwable e)
+					{
+						if(!(e instanceof CompilerException)) {
+								Integer line = (Integer) LINE.deref();
+								Integer column = (Integer) COLUMN.deref();
+								String source = (String) SOURCE.deref();
+								throw new CompilerException(source, line, column, e);
+						} else
+							throw (CompilerException) e;
 					}
 			}
 		else

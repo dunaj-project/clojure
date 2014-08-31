@@ -87,7 +87,9 @@
       (map inc ()) ()
       (map inc []) ()
       (map inc #{}) ()
-      (map inc {}) () ))
+      (map inc {}) ()
+      (sequence (map inc) (range 10)) (range 1 11)
+      (range 1 11) (sequence (map inc) (range 10))))
 
 
 (deftest test-lazy-seq
@@ -1151,6 +1153,21 @@
   (is (= (reductions + 10 [1 2 3 4 5])
 	 [10 11 13 16 20 25])))
 
+(deftest test-reductions-obeys-reduced
+  (is (= [0 :x]
+         (reductions (constantly (reduced :x))
+                     (range))))
+  (is (= [:x]
+         (reductions (fn [acc x] x)
+                     (reduced :x)
+                     (range))))
+  (is (= [2 6 12 12]
+         (reductions (fn [acc x]
+                       (if (= x :stop)
+                         (reduced acc)
+                         (+ acc x)))
+                     [2 4 6 :stop 8 10]))))
+
 (deftest test-rand-nth-invariants
   (let [elt (rand-nth [:a :b :c :d])]
     (is (#{:a :b :c :d} elt))))
@@ -1166,3 +1183,20 @@
   (let [shuffled-seq (shuffle [1 2 3 4])]
     (is (every? #{1 2 3 4} shuffled-seq))))
 
+(deftest test-ArrayIter
+  (are [arr expected]
+    (let [iter (clojure.lang.ArrayIter/createFromObject arr)]
+      (loop [accum []]
+        (if (.hasNext iter)
+          (recur (conj accum (.next iter)))
+          (is (= expected accum)))))
+    nil []
+    (object-array ["a" "b" "c"]) ["a" "b" "c"]
+    (boolean-array [false true false]) [false true false]
+    (byte-array [1 2]) [(byte 1) (byte 2)]
+    (short-array [1 2]) [1 2]
+    (int-array [1 2]) [1 2]
+    (long-array [1 2]) [1 2]
+    (float-array [2.0 -2.5]) [2.0 -2.5]
+    (double-array [1.2 -3.5]) [1.2 -3.5]
+    (char-array [\H \i]) [\H \i]))

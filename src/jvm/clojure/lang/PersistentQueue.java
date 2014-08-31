@@ -253,7 +253,7 @@ public boolean contains(Object o){
 }
 
 public Iterator iterator(){
-	return new SeqIterator(seq());
+	return new SeqIterator(this);
 }
 
 /*

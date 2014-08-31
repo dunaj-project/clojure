@@ -10,14 +10,13 @@
 
 package clojure.lang;
 
-public final class Reduced implements IDeref{
-Object val;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
 
-public Reduced(Object val){
-	this.val = val;
-}
-
-public Object deref(){
-	return val;
-}
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface WarnBoxedMath {
+    boolean value() default true;
 }

@@ -473,7 +473,7 @@
   {:added "1.2"
    :arglists '([name [& fields] & opts+specs])}
   [name fields & opts+specs]
-  (validate-fields fields)
+  (validate-fields fields name)
   (let [gname name
         [interfaces methods opts] (parse-opts+specs opts+specs)
         ns-part (namespace-munge *ns*)
@@ -487,7 +487,8 @@
        ~(build-positional-factory gname classname fields)
        (defn ~(symbol (str 'map-> gname))
          ~(str "Factory function for class " classname ", taking a map of keywords to field values.")
-         ([m#] (~(symbol (str classname "/create")) m#)))
+         ([m#] (~(symbol (str classname "/create"))
+                (if (instance? clojure.lang.MapEquivalence m#) m# (into {} m#)))))
        (def ~name {:on '~classname
                    :on-class ~classname
                    ::record true}))))
@@ -593,7 +594,7 @@
   {:added "1.2"
    :arglists '([name [& fields] & opts+specs])}
   [name fields & opts+specs]
-  (validate-fields fields)
+  (validate-fields fields name)
   (let [gname name
         [interfaces methods opts] (parse-opts+specs opts+specs)
         ns-part (namespace-munge *ns*)

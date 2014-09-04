@@ -436,7 +436,7 @@ public static final class TransientVector extends AFn implements ITransientVecto
 	int cnt;
 	int shift;
 	Node root;
-	Object[] tail;
+	public Object[] tail;
 
 	TransientVector(int cnt, int shift, Node root, Object[] tail){
 		this.cnt = cnt;
@@ -554,7 +554,7 @@ public static final class TransientVector extends AFn implements ITransientVecto
 		return ((cnt-1) >>> 5) << 5;
 	}
 
-	private Object[] arrayFor(int i){
+	public Object[] arrayFor(int i){
 		if(i >= 0 && i < cnt)
 			{
 			if(i >= tailoff())

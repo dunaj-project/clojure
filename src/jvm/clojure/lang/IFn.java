@@ -778,4 +778,5 @@ static public interface DDDDO{Object invokePrim(double arg0, double arg1, double
 static public interface DDDDL{long invokePrim(double arg0, double arg1, double arg2, double arg3);}
 static public interface DDDDD{double invokePrim(double arg0, double arg1, double arg2, double arg3);}
 static public interface OOIIO{Object invokePrim(Object arg0, Object arg1, int arg2, int arg3);}
+static public interface OOOIIO{Object invokePrim(Object arg0, Object arg1, Object arg2, int arg3, int arg4);}
 }

@@ -16,9 +16,9 @@ import java.io.Serializable;
 
 public final class ArrayChunk implements IChunk, Serializable {
 
-final Object[] array;
-final int off;
-final int end;
+public final Object[] array;
+public final int off;
+public final int end;
 
 public ArrayChunk(Object[] array){
 	this(array, 0, array.length);

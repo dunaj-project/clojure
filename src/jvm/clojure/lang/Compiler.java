@@ -5345,7 +5345,7 @@ public static class FnMethod extends ObjMethod{
                                       "DDOOL", "DDOOD", "DDOLO", "DDOLL", "DDOLD", "DDODO", "DDODL", "DDODD", 
                                       "DDLOO", "DDLOL", "DDLOD", "DDLLO", "DDLLL", "DDLLD", "DDLDO", "DDLDL", 
                                       "DDLDD", "DDDOO", "DDDOL", "DDDOD", "DDDLO", "DDDLL", "DDDLD", "DDDDO", 
-                                      "DDDDL", "DDDDD", "OOIIO", "OOOIIO", "OIOI"};
+                                      "DDDDL", "DDDDD", "OOIIO", "OOIIIO", "OOOIIO", "OOOIIIO", "OIOI"};
                 primitiveTypes = new HashSet(Arrays.asList(primArray));
         }
 

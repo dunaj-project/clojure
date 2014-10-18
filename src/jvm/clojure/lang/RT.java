@@ -254,7 +254,7 @@ static final Var QNEW_VAR = Var.intern(CLOJURE_NS, Symbol.intern("new"));
 static final Var QAMP_VAR = Var.intern(CLOJURE_NS, Symbol.intern("&"));
 
 final static Var IN_NS_VAR = Var.intern(CLOJURE_NS, Symbol.intern("in-ns"), F);
-final static Var IN_NS_BARE_VAR = Var.intern(CLOJURE_NS, Symbol.intern("in-ns"), F);
+final static Var IN_NS_BARE_VAR = Var.intern(CLOJURE_NS, Symbol.intern("in-ns-bare"), F);
 final static Var NS_VAR = Var.intern(CLOJURE_NS, Symbol.intern("ns"), F);
 final static Var FN_LOADER_VAR = Var.intern(CLOJURE_NS, Symbol.intern("*fn-loader*"), null).setDynamic();
 static final Var PRINT_INITIALIZED = Var.intern(CLOJURE_NS, Symbol.intern("print-initialized"));

@@ -7470,3 +7470,8 @@
                           ~(when doc-string `{:doc ~doc-string})
                           ~attr-map))
                  (when (.hasRoot var#) [@var#]))))))
+
+(defn dunaj!
+  []
+  (require 'dunaj.user)
+  (in-ns-bare 'dunaj.user))

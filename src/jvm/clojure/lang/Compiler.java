@@ -830,7 +830,7 @@ public static class KeywordExpr extends LiteralExpr{
 
 public static class ImportExpr implements Expr{
 	public final String c;
-	final static Method forNameMethod = Method.getMethod("Class forName(String)");
+	final static Method forNameMethod = Method.getMethod("Class classForNameNonLoading(String)");
 	final static Method importClassMethod = Method.getMethod("Class importClass(Class)");
 	final static Method derefMethod = Method.getMethod("Object deref()");
 
@@ -840,7 +840,7 @@ public static class ImportExpr implements Expr{
 
 	public Object eval() {
 		Namespace ns = (Namespace) RT.CURRENT_NS.deref();
-		ns.importClass(RT.classForName(c));
+		ns.importClass(RT.classForNameNonLoading(c));
 		return null;
 	}
 
@@ -849,7 +849,7 @@ public static class ImportExpr implements Expr{
 		gen.invokeVirtual(VAR_TYPE, derefMethod);
 		gen.checkCast(NS_TYPE);
 		gen.push(c);
-		gen.invokeStatic(CLASS_TYPE, forNameMethod);
+		gen.invokeStatic(RT_TYPE, forNameMethod);
 		gen.invokeVirtual(NS_TYPE, importClassMethod);
 		if(context == C.STATEMENT)
 			gen.pop();
@@ -1709,7 +1709,7 @@ static class StaticMethodExpr extends MethodExpr{
 	final static Method forNameMethod = Method.getMethod("Class forName(String)");
 	final static Method invokeStaticMethodMethod =
 			Method.getMethod("Object invokeStaticMethod(Class,String,Object[])");
-
+	final static Keyword warnOnBoxedKeyword = Keyword.intern("warn-on-boxed");
 
 	public StaticMethodExpr(String source, int line, int column, Symbol tag, Class c, String methodName, IPersistentVector args)
 			{
@@ -1745,7 +1745,7 @@ static class StaticMethodExpr extends MethodExpr{
 				.format("Reflection warning, %s:%d:%d - call to static method %s on %s can't be resolved (argument types: %s).\n",
 					SOURCE_PATH.deref(), line, column, methodName, c.getName(), getTypeStringForArgs(args));
 			}
-		if(method != null && RT.booleanCast(RT.UNCHECKED_MATH.deref()) && isBoxedMath(method))
+		if(method != null && warnOnBoxedKeyword.equals(RT.UNCHECKED_MATH.deref()) && isBoxedMath(method))
 			{
 			RT.errPrintWriter()
 				.format("Boxed math warning, %s:%d:%d - call: %s.\n",
@@ -3994,17 +3994,28 @@ static public class FnExpr extends ObjExpr{
 //			fn.superName = (String) RT.get(RT.meta(form.first()), Keyword.intern(null, "super-name"));
 			}
 		//fn.thisName = name;
-		String basename = enclosingMethod != null ?
-		                  (enclosingMethod.objx.name + "$")
-		                                          : //"clojure.fns." +
-		                  (munge(currentNS().name.name) + "$");
-		if(RT.second(form) instanceof Symbol)
-			name = ((Symbol) RT.second(form)).name;
-		String simpleName = name != null ?
-		                    (munge(name).replace(".", "_DOT_")
-		                    + (enclosingMethod != null ? "__" + RT.nextID() : ""))
-		                    : ("fn"
-		                      + "__" + RT.nextID());
+
+		String basename = (enclosingMethod != null ?
+		                  enclosingMethod.objx.name
+		                  : (munge(currentNS().name.name))) + "$";
+
+		Symbol nm = null;
+
+		if(RT.second(form) instanceof Symbol) {
+			nm = (Symbol) RT.second(form);
+			if (name == null)
+				name = nm.name + "__" + RT.nextID();
+			else
+				name += "__" + nm.name + "__" + RT.nextID();
+		} else {
+			if(name == null)
+				name = "fn__" + RT.nextID();
+			else if (enclosingMethod != null)
+				name += "__" + RT.nextID();
+		}
+
+		String simpleName = munge(name).replace(".", "_DOT_");
+
 		fn.name = basename + simpleName;
 		fn.internalName = fn.name.replace('.', '/');
 		fn.objtype = Type.getObjectType(fn.internalName);
@@ -4023,9 +4034,8 @@ static public class FnExpr extends ObjExpr{
 					));
 
 			//arglist might be preceded by symbol naming this fn
-			if(RT.second(form) instanceof Symbol)
+			if(nm != null)
 				{
-				Symbol nm = (Symbol) RT.second(form);
 				fn.thisName = nm.name;
 				fn.isStatic = false; //RT.booleanCast(RT.get(nm.meta(), staticKey));
 				form = RT.cons(QFN, RT.next(RT.next(form)));

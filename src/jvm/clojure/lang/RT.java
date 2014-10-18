@@ -479,7 +479,8 @@ static public void load(String scriptbase, boolean failIfNotFound) throws IOExce
 			loadResourceScript(RT.class, cljfile);
 	}
 	else if(!loaded && failIfNotFound)
-		throw new FileNotFoundException(String.format("Could not locate %s or %s on classpath: ", classfile, cljfile));
+		throw new FileNotFoundException(String.format("Could not locate %s or %s on classpath.%s", classfile, cljfile,
+			scriptbase.contains("_") ? " Please check that namespaces with dashes use underscores in the Clojure file name." : ""));
 }
 
 static void doInit() throws ClassNotFoundException, IOException{
@@ -2204,7 +2205,7 @@ static public Class classForName(String name) {
 		}
 }
 
-static Class classForNameNonLoading(String name) {
+static public Class classForNameNonLoading(String name) {
 	try
 		{
 		return Class.forName(name, false, baseLoader());

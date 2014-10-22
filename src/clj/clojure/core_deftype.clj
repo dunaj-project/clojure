@@ -12,30 +12,6 @@
 
 ;;(set! *warn-on-reflection* true)
 
-(defonce ^:private host-lock #{})
-
-(def ^:dynamic *silent-parasite* false)
-
-(defn host-lock!
-  ([e]
-     (alter-var-root #'host-lock conj e))
-  ([e & more]
-     (host-lock! e)
-     (doseq [x more]
-       (host-lock! x))))
-
-(defn ^:private host-locked?
-  [e]
-  (contains? host-lock e))
-
-(defn ^:private assert-host-lock
-  [& entities]
-  (doseq [e entities]
-    (assert (not (host-locked? e))
-            (str "Due to the host optimization, "
-                 "following interface/class/type/protocol"
-                 "cannot be extended: " e))))
-
 (defn namespace-munge
   "Convert a Clojure namespace name to a legal Java package name."
   {:added "1.2"}
@@ -134,7 +110,6 @@
 (defn- parse-opts+specs [opts+specs]
   (let [[opts specs] (parse-opts opts+specs)
         impls (parse-impls-translated specs)
-        _ (apply assert-host-lock (keys impls))
         interfaces (-> (mapcat #(if (var? (resolve %))
                                   (let [p (deref (resolve %))]
                                     (if (:marker p)
@@ -1178,13 +1153,10 @@
         vac (if (or array? (class? atype))
               atype
               (:var atype))
-        _ (assert-host-lock atype)
         atype (if (or array? (class? atype))
                 atype
-                (:on-class atype))
-        _ (assert-host-lock atype)]
+                (:on-class atype))]
     (doseq [[proto mmap] (partition 2 proto+mmaps)]
-      (assert-host-lock proto)        
       (when-not (protocol? proto)
         (throw (IllegalArgumentException.
                 (str proto " is not a protocol"))))
@@ -1192,10 +1164,6 @@
                  (not (implements? proto atype)))
         (throw (IllegalArgumentException.
                 (str "Extensions are forbidden for protocol " (:var proto)))))
-      #_(when (and (:marker proto) (not (empty? mmap))
-                 (false? *silent-parasite*))
-        (println (str "Warning: " vac
-                      " class is extending parasite protocol " (:var proto))))
       (when (and (not (:marker proto)) (not array?) (implements? proto atype))
         (throw (IllegalArgumentException. 
                 (str vac " already directly implements " (:on-interface proto) " for protocol:"  
@@ -1235,18 +1203,6 @@
   (let [impls (parse-impls specs)]
     `(extend ~c
              ~@(mapcat (partial emit-hinted-impl c) impls))))
-
-(defn- emit-extend-array [specs]
-  (let [impls (parse-impls specs)]
-    `(extend :array
-             ~@(mapcat emit-impl impls))))
-
-(defmacro extend-arrays
-  "Supplies a protocol implementation for any array,
-   including primitive arrays."
-  {:added "1.2"} 
-  [& specs]
-  (emit-extend-array specs))
 
 (defmacro extend-type 
   "A macro that expands into an extend call. Useful when you are

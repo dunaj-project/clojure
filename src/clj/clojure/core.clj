@@ -1572,7 +1572,7 @@
   but is easier to write, read, and understand."
   {:added "1.0"}
   ([x form] `(. ~x ~form))
-  ([x form & more] `(.. (. ~x ~form) ~@more)))
+  ([x form & more] `(clojure.core/.. (. ~x ~form) ~@more)))
 
 (defmacro ->
   "Threads the expr through the forms. Inserts x as the
@@ -4213,7 +4213,7 @@
      (vector? name-vals-vec) "a vector for its binding"
      (even? (count name-vals-vec)) "an even number of forms in binding vector")
   `(let [~@(interleave (take-nth 2 name-vals-vec)
-                       (repeat '(.. clojure.lang.Var create setDynamic)))]
+                       (repeat '(clojure.core/.. clojure.lang.Var create setDynamic)))]
      (. clojure.lang.Var (pushThreadBindings (hash-map ~@name-vals-vec)))
      (try
       ~@body

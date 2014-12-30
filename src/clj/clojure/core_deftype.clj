@@ -38,14 +38,7 @@
        (import ~cname))))
 
 (defmacro definterface2
-  "Creates a new Java interface with the given name and method sigs.
-  The method return types and parameter types may be specified with type hints,
-  defaulting to Object if omitted.
-
-  (definterface MyInterface
-    (^int method1 [x])
-    (^Bar method2 [^Baz b ^Quux q]))"
-  {:added "1.2"} ;; Present since 1.2, but made public in 1.5.
+  "Like definterface, but does not import interface into *ns*."
   [name & sigs]
   (let [tag (fn [x] (or (:tag (meta x)) Object))
         psig (fn [[name [& args]]]
@@ -443,10 +436,9 @@
        ~classname)))
 
 (defmacro defrecord2
-  "Like defrecord but does not import Class and defines type object
-   with the structure similar to the protocol object."
-  {:added "1.2"
-   :arglists '([name [& fields] & opts+specs])}
+  "Like defrecord but does not import Class and defines type object map
+   with the structure similar to the protocol object map."
+  {:arglists '([name [& fields] & opts+specs])}
   [name fields & opts+specs]
   (validate-fields fields name)
   (let [gname name
@@ -564,10 +556,9 @@
        ~classname)))
 
 (defmacro deftype2
-  "Like deftype but does not import Class and defines type object with
-   the structure similar to the protocol object."
-  {:added "1.2"
-   :arglists '([name [& fields] & opts+specs])}
+  "Like deftype but does not import Class and defines type object map with
+   the structure similar to the protocol object map."
+  {:arglists '([name [& fields] & opts+specs])}
   [name fields & opts+specs]
   (validate-fields fields name)
   (let [gname name
@@ -617,23 +608,6 @@
   ([^Class a ^Class b]
      (if (.isAssignableFrom a b) b a)))
 
-(defn find-protocol-impl-old [protocol x]
-  (if (and (instance? ^java.lang.Class (:on-interface protocol) x)
-           (or (not (:marker-interface protocol))
-               (:marker-soft protocol)
-               (instance? ^java.lang.Class (:marker-interface protocol) x)
-               (some #(instance? ^java.lang.Class % x)
-                     (:marker-types protocol))))
-    (or x true)
-    (let [c (class x)
-          impl #(get (:impls protocol) %)]
-      (or (and c (.isArray c) (impl :array))
-          (impl c)
-          (and c (or (first (remove nil? (map impl (butlast (super-chain c)))))
-                     (when-let [t (reduce1 pref (filter impl (disj (supers c) Object)))]
-                       (impl t))
-                     (impl Object)))))))
-
 (defn find-protocol-impl [protocol x]
   (if (and (instance? ^java.lang.Class (:on-interface protocol) x)
            (or (not (:marker-interface protocol))
@@ -649,8 +623,7 @@
                      (when-let [t (reduce1 pref (filter impl (disj (supers c) Object)))]
                        (impl t))
                      (impl Object)))
-          (and c (.isArray c) (impl :array))
-          ))))
+          (and c (.isArray c) (impl :array))))))
 
 (defn find-protocol-method [protocol methodk x]
   (get (find-protocol-impl protocol x) methodk))
@@ -689,13 +662,6 @@
            (boolean (some #(instance? ^java.lang.Class % x)
                           (.-marker-types protocol))))))
 
-#_(
-
-   (keys (:impls dunaj.coll/IRed))
-   (keys (:impls dunaj.coll/ISectionable))
-
-   )
-
 (defn satisfies?
   "Returns true if x satisfies the protocol"
   {:added "1.2"
@@ -712,13 +678,6 @@
                                 (cond (== i l) false
                                       (instance? ^java.lang.Class (aget arr i) x) true
                                       :else (recur (unchecked-inc i))))))))))))
-
-#_(defn satisfies?
-  "Returns true if x satisfies the protocol"
-  {:added "1.2"
-   :tag Boolean}
-  ^boolean [protocol x]
-  (boolean (find-protocol-impl protocol x)))
 
 (defn -cache-protocol-fn [^clojure.lang.AFunction pf x ^Class c ^clojure.lang.IFn interf]
   (let [cache  (.__methodImplCache pf)
@@ -810,7 +769,7 @@
                      (str "method " (.sym v) " of protocol " (.sym p))
                      (str "function " (.sym v)))))))))
 
-;; massive hacks, i'm really ashamed
+;; massive hacks, i'm really sorry
 
 (defmacro finish-emit-protocol [name opts+sigs]
   (let [iname (symbol (str (munge (namespace-munge *ns*)) "." (munge name)))
@@ -1103,7 +1062,6 @@
 
 (defmacro defprotocol2
   "Like defprotocol but parasites on existing interface."
-  {:added "1.2"} 
   [name & opts+sigs]
   `(do
      ~(emit-protocol2 name opts+sigs)

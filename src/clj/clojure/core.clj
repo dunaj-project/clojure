@@ -3211,7 +3211,7 @@
            ~@body
            (recur (unchecked-inc ~i)))))))
 
-(defn into
+#_(defn into
   "Returns a new coll consisting of to-coll with all of the items of
   from-coll conjoined."
   {:added "1.0"}

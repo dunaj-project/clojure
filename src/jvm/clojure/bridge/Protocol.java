@@ -1,5 +1,5 @@
 /**
- *   Copyright (c) 2014, Jozef Wagner. All rights reserved.
+ *   Copyright (c) 2013, 2015, Jozef Wagner. All rights reserved.
  *   The use and distribution terms for this software are covered by the
  *   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
  *   which can be found in the file epl-v10.html at the root of this distribution.
@@ -20,16 +20,16 @@ import clojure.lang.Keyword;
 import clojure.lang.PersistentArrayMap;
 
 /**
- *  Dunaj uses protocols instead of interfaces to deliver greater
+ *  Dunaj uses protocols instead of interfaces to improve
  *  flexibility. In order to change clojure source as rarely as
- *  possible, a bridge is implemented which injects protocol logic
+ *  possible, a bridge is implemented that injects protocol logic
  *  into existing java sources, so that we can have both clojure
  *  original interfaces and dunaj protocols. The drawback is that this
- *  bridge slows down things a bit.
+ *  bridge slows down things a bit, and may hinder inlining.
  *
  *  Dummy versions of protocols, their methods and satisfies? function
  *  are created so that protocol methods can be called before they are
- *  really created. 
+ *  really created.
  */
 
 public class Protocol {

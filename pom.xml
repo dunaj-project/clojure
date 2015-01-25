@@ -5,7 +5,7 @@
   <artifactId>clojure</artifactId>
   <name>clojure</name>
   <packaging>jar</packaging>
-  <version>1.7.0-dunaj-SNAPSHOT</version>
+  <version>1.7.0-dunaj_pre1</version>
 
   <distributionManagement>
     <snapshotRepository>
@@ -13,6 +13,11 @@
       <name>Clojars repository</name>
       <url>https://clojars.org/repo</url>
     </snapshotRepository>
+    <repository>
+      <id>clojars</id>
+      <name>Clojars repository</name>
+      <url>https://clojars.org/repo</url>
+    </repository>
   </distributionManagement>
 
 
@@ -92,6 +97,19 @@
     </resources>
     <testSourceDirectory>test/java</testSourceDirectory>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>sign-artifacts</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>sign</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
 	<groupId>org.apache.maven.plugins</groupId>
 	<artifactId>maven-compiler-plugin</artifactId>

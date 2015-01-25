@@ -1710,7 +1710,7 @@ static class StaticMethodExpr extends MethodExpr{
 	public final int column;
 	public final java.lang.reflect.Method method;
 	public final Symbol tag;
-	final static Method forNameMethod = Method.getMethod("Class forName(String)");
+	final static Method forNameMethod = Method.getMethod("Class classForName(String)");
 	final static Method invokeStaticMethodMethod =
 			Method.getMethod("Object invokeStaticMethod(Class,String,Object[])");
 	final static Keyword warnOnBoxedKeyword = Keyword.intern("warn-on-boxed");
@@ -1887,7 +1887,7 @@ static class StaticMethodExpr extends MethodExpr{
 		else
 			{
 			gen.push(c.getName());
-			gen.invokeStatic(CLASS_TYPE, forNameMethod);
+			gen.invokeStatic(RT_TYPE, forNameMethod);
 			gen.push(methodName);
 			emitArgsAsArray(args, objx, gen);
 			if(context == C.RETURN)
@@ -2604,8 +2604,7 @@ public static class NewExpr implements Expr{
 	public final Class c;
 	final static Method invokeConstructorMethod =
 			Method.getMethod("Object invokeConstructor(Class,Object[])");
-//	final static Method forNameMethod = Method.getMethod("Class classForName(String)");
-	final static Method forNameMethod = Method.getMethod("Class forName(String)");
+	final static Method forNameMethod = Method.getMethod("Class classForName(String)");
 
 
 	public NewExpr(Class c, IPersistentVector args, int line, int column) {
@@ -2678,7 +2677,7 @@ public static class NewExpr implements Expr{
 		else
 			{
 			gen.push(destubClassName(c.getName()));
-			gen.invokeStatic(CLASS_TYPE, forNameMethod);
+			gen.invokeStatic(RT_TYPE, forNameMethod);
 			MethodExpr.emitArgsAsArray(args, objx, gen);
 			if(context == C.RETURN)
 				{
@@ -4755,7 +4754,7 @@ static public class ObjExpr implements Expr{
 			else
 				{
 				gen.push(destubClassName(cc.getName()));
-				gen.invokeStatic(Type.getType(Class.class), Method.getMethod("Class forName(String)"));
+				gen.invokeStatic(RT_TYPE, Method.getMethod("Class classForName(String)"));
 				}
 			}
 		else if(value instanceof Symbol)
@@ -7683,7 +7682,7 @@ public static Object compile(Reader rdr, String sourcePath, String sourceName) t
 			clinitgen.invokeStatic(objx.objtype, Method.getMethod("void __init" + n + "()"));
 
 		clinitgen.push(objx.internalName.replace('/','.'));
-		clinitgen.invokeStatic(CLASS_TYPE, Method.getMethod("Class forName(String)"));
+		clinitgen.invokeStatic(RT_TYPE, Method.getMethod("Class classForName(String)"));
 		clinitgen.invokeVirtual(CLASS_TYPE,Method.getMethod("ClassLoader getClassLoader()"));
 		clinitgen.invokeStatic(Type.getType(Compiler.class), Method.getMethod("void pushNSandLoader(ClassLoader)"));
 		clinitgen.mark(startTry);
@@ -8768,7 +8767,7 @@ public static class CaseExpr implements Expr, MaybePrimitiveExpr{
 			ISeq form = (ISeq) frm;
 			if(context == C.EVAL)
 				return analyze(context, RT.list(RT.list(FNONCE, PersistentVector.EMPTY, form)));
-			PersistentVector args = PersistentVector.create(form.next());
+			IPersistentVector args = LazilyPersistentVector.create(form.next());
 
 			Object exprForm = args.nth(0);
 			int shift = ((Number)args.nth(1)).intValue();

@@ -7,6 +7,15 @@
   <packaging>jar</packaging>
   <version>1.7.0-dunaj-SNAPSHOT</version>
 
+  <distributionManagement>
+    <snapshotRepository>
+      <id>clojars</id>
+      <name>Clojars repository</name>
+      <url>https://clojars.org/repo</url>
+    </snapshotRepository>
+  </distributionManagement>
+
+
   <url>http://clojure.org/</url>
   <description>Clojure core environment and runtime library.</description>
 

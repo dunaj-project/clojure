@@ -506,6 +506,7 @@ static class DefExpr implements Expr{
 	public final Expr meta;
 	public final boolean initProvided;
 	public final boolean isDynamic;
+	public final boolean shadowsCoreMapping;
 	public final String source;
 	public final int line;
 	public final int column;
@@ -514,8 +515,9 @@ static class DefExpr implements Expr{
 	final static Method setMetaMethod = Method.getMethod("void setMeta(clojure.lang.IPersistentMap)");
 	final static Method setDynamicMethod = Method.getMethod("clojure.lang.Var setDynamic(boolean)");
 	final static Method symintern = Method.getMethod("clojure.lang.Symbol intern(String, String)");
+	final static Method internVar = Method.getMethod("clojure.lang.Var refer(clojure.lang.Symbol, clojure.lang.Var)");
 
-	public DefExpr(String source, int line, int column, Var var, Expr init, Expr meta, boolean initProvided, boolean isDynamic){
+	public DefExpr(String source, int line, int column, Var var, Expr init, Expr meta, boolean initProvided, boolean isDynamic, boolean shadowsCoreMapping){
 		this.source = source;
 		this.line = line;
 		this.column = column;
@@ -523,6 +525,7 @@ static class DefExpr implements Expr{
 		this.init = init;
 		this.meta = meta;
 		this.isDynamic = isDynamic;
+		this.shadowsCoreMapping = shadowsCoreMapping;
 		this.initProvided = initProvided;
 	}
 
@@ -568,6 +571,18 @@ static class DefExpr implements Expr{
 
 	public void emit(C context, ObjExpr objx, GeneratorAdapter gen){
 		objx.emitVar(gen, var);
+
+		if (shadowsCoreMapping)
+		{
+			gen.dup();
+			gen.getField(VAR_TYPE, "ns", NS_TYPE);
+			gen.swap();
+			gen.dup();
+			gen.getField(VAR_TYPE, "sym", SYMBOL_TYPE);
+			gen.swap();
+			gen.invokeVirtual(NS_TYPE, internVar);
+		}
+
 		if(isDynamic)
 			{
 			gen.push(isDynamic);
@@ -625,11 +640,13 @@ static class DefExpr implements Expr{
 			Var v = lookupVar(sym, true);
 			if(v == null)
 				throw Util.runtimeException("Can't refer to qualified var that doesn't exist");
+			boolean shadowsCoreMapping = false;
 			if(!v.ns.equals(currentNS()))
 				{
 				if(sym.ns == null)
 					{
 					v = currentNS().intern(sym);
+					shadowsCoreMapping = true;
 					registerVar(v);
 					}
 //					throw Util.runtimeException("Name conflict, can't def " + sym + " because namespace: " + currentNS().name +
@@ -673,7 +690,7 @@ static class DefExpr implements Expr{
 			Expr meta = mm.count()==0 ? null:analyze(context == C.EVAL ? context : C.EXPRESSION, mm);
 			return new DefExpr((String) SOURCE.deref(), lineDeref(), columnDeref(),
 			                   v, analyze(context == C.EVAL ? context : C.EXPRESSION, RT.third(form), v.sym.name),
-			                   meta, RT.count(form) == 3, isDynamic);
+			                   meta, RT.count(form) == 3, isDynamic, shadowsCoreMapping);
 		}
 	}
 }
@@ -7420,12 +7437,20 @@ public static Object load(Reader rdr) {
 	return load(rdr, null, "NO_SOURCE_FILE");
 }
 
+static void consumeWhitespaces(LineNumberingPushbackReader pushbackReader) {
+	int ch = LispReader.read1(pushbackReader);
+	while(LispReader.isWhitespace(ch))
+		ch = LispReader.read1(pushbackReader);
+	LispReader.unread(pushbackReader, ch);
+}
+
 public static Object load(Reader rdr, String sourcePath, String sourceName) {
 	Object EOF = new Object();
 	Object ret = null;
 	LineNumberingPushbackReader pushbackReader =
 			(rdr instanceof LineNumberingPushbackReader) ? (LineNumberingPushbackReader) rdr :
 			new LineNumberingPushbackReader(rdr);
+	consumeWhitespaces(pushbackReader);
 	Var.pushThreadBindings(
 			RT.mapUniqueKeys(LOADER, RT.makeClassLoader(),
 			       SOURCE_PATH, sourcePath,
@@ -7450,6 +7475,7 @@ public static Object load(Reader rdr, String sourcePath, String sourceName) {
 		for(Object r = LispReader.read(pushbackReader, false, EOF, false); r != EOF;
 		    r = LispReader.read(pushbackReader, false, EOF, false))
 			{
+			consumeWhitespaces(pushbackReader);
 			LINE_AFTER.set(pushbackReader.getLineNumber());
 			COLUMN_AFTER.set(pushbackReader.getColumnNumber());
 			ret = eval(r,false);

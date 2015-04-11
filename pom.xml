@@ -5,7 +5,7 @@
   <artifactId>clojure</artifactId>
   <name>clojure</name>
   <packaging>jar</packaging>
-  <version>1.7.0-dunaj_pre3</version>
+  <version>1.7.0-dunaj_b1</version>
 
   <distributionManagement>
     <snapshotRepository>
@@ -19,7 +19,6 @@
       <url>https://clojars.org/repo</url>
     </repository>
   </distributionManagement>
-
 
   <url>http://clojure.org/</url>
   <description>Clojure core environment and runtime library.</description>
@@ -62,7 +61,7 @@
     <dependency>
       <groupId>org.clojure</groupId>
       <artifactId>test.generative</artifactId>
-      <version>0.5.1</version>
+      <version>0.5.2</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>

@@ -2546,9 +2546,15 @@
      (if (seq? coll) coll
          (or (seq coll) ())))
   ([xform coll]
-     (clojure.lang.LazyTransformer/create xform coll))
+     (or (clojure.lang.RT/chunkIteratorSeq
+         (clojure.lang.TransformerIterator/create xform (clojure.lang.RT/iter coll)))
+       ()))
   ([xform coll & colls]
-     (clojure.lang.LazyTransformer/createMulti xform (to-array (cons coll colls)))))
+     (or (clojure.lang.RT/chunkIteratorSeq
+         (clojure.lang.TransformerIterator/createMulti
+           xform
+           (map #(clojure.lang.RT/iter %) (cons coll colls))))
+       ())))
 
 (defn every?
   "Returns true if (pred x) is logical true for every x in coll, else
@@ -2694,8 +2700,9 @@
               size (count c)
               b (chunk-buffer size)]
           (dotimes [i size]
-              (when (pred (.nth c i))
-                (chunk-append b (.nth c i))))
+              (let [v (.nth c i)]
+                (when (pred v)
+                  (chunk-append b v))))
           (chunk-cons (chunk b) (filter pred (chunk-rest s))))
         (let [f (first s) r (rest s)]
           (if (pred f)
@@ -2861,9 +2868,7 @@
   "Returns a lazy (infinite!) sequence of repetitions of the items in coll."
   {:added "1.0"
    :static true}
-  [coll] (lazy-seq 
-          (when-let [s (seq coll)] 
-              (concat s (cycle s)))))
+  [coll] (clojure.lang.Cycle/create (seq coll)))
 
 (defn split-at
   "Returns a vector of [(take n coll) (drop n coll)]"
@@ -2883,8 +2888,8 @@
   "Returns a lazy (infinite!, or length n if supplied) sequence of xs."
   {:added "1.0"
    :static true}
-  ([x] (lazy-seq (cons x (repeat x))))
-  ([n x] (take n (repeat x))))
+  ([x] (clojure.lang.Repeat/create x))
+  ([n x] (clojure.lang.Repeat/create n x)))
 
 (defn replicate
   "DEPRECATED: Use 'repeat' instead.
@@ -2897,7 +2902,7 @@
   "Returns a lazy sequence of x, (f x), (f (f x)) etc. f must be free of side-effects"
   {:added "1.0"
    :static true}
-  [f x] (cons x (lazy-seq (iterate f (f x)))))
+  [f x] (clojure.lang.Iterate/create f x) )
 
 (defn range
   "Returns a lazy seq of nums from start (inclusive) to end
@@ -2906,24 +2911,20 @@
   start. When start is equal to end, returns empty list."
   {:added "1.0"
    :static true}
-  ([] (range 0 Double/POSITIVE_INFINITY 1))
-  ([end] (range 0 end 1))
-  ([start end] (range start end 1))
+  ([]
+   (iterate inc' 0))
+  ([end]
+   (if (instance? Long end)
+     (clojure.lang.LongRange/create end)
+     (clojure.lang.Range/create end)))
+  ([start end]
+   (if (and (instance? Long start) (instance? Long end))
+     (clojure.lang.LongRange/create start end)
+     (clojure.lang.Range/create start end)))
   ([start end step]
-   (lazy-seq
-    (let [b (chunk-buffer 32)
-          comp (cond (or (zero? step) (= start end)) not=
-                     (pos? step) <
-                     (neg? step) >)]
-      (loop [i start]
-        (if (and (< (count b) 32)
-                 (comp i end))
-          (do
-            (chunk-append b i)
-            (recur (+ i step)))
-          (chunk-cons (chunk b) 
-                      (when (comp i end) 
-                        (range i end step)))))))))
+   (if (and (instance? Long start) (instance? Long end) (instance? Long step))
+     (clojure.lang.LongRange/create start end step)
+     (clojure.lang.Range/create start end step))))
 
 (defn merge
   "Returns a map that consists of the rest of the maps conj-ed onto
@@ -3024,8 +3025,8 @@
   {:added "1.0"
    :static true}
   ([coll]
-   (when (seq coll)
-     (recur (next coll))))
+   (when-let [s (seq coll)]
+     (recur (next s))))
   ([n coll]
    (when (and (seq coll) (pos? n))
      (recur (dec n) (next coll)))))
@@ -3062,7 +3063,7 @@
    :static true}
   [coll n]
     (loop [n n xs coll]
-      (if (and (pos? n) (seq xs))
+      (if-let [xs (and (pos? n) (seq xs))]
         (recur (dec n) (rest xs))
         xs)))
 
@@ -3639,6 +3640,13 @@
   java.io.PushbackReader or some derivee.  stream defaults to the
   current value of *in*.
 
+  Opts is a persistent map with valid keys:
+    :read-cond - :allow to process reader conditionals, or
+                 :preserve to keep all branches
+    :features - persistent set of feature keywords for reader conditionals
+    :eof - on eof, return value unless :eofthrow, then throw.
+           if not specified, will throw
+
   Note that read can execute code (controlled by *read-eval*),
   and as such should be used only with trusted sources.
 
@@ -3652,7 +3660,9 @@
   ([stream eof-error? eof-value]
    (read stream eof-error? eof-value false))
   ([stream eof-error? eof-value recursive?]
-   (. clojure.lang.LispReader (read stream (boolean eof-error?) eof-value recursive?))))
+   (. clojure.lang.LispReader (read stream (boolean eof-error?) eof-value recursive?)))
+  ([opts stream]
+   (. clojure.lang.LispReader (read stream opts))))
 
 (defn read-line
   "Reads the next line from stream that is the current value of *in* ."
@@ -3664,7 +3674,8 @@
     (.readLine ^java.io.BufferedReader *in*)))
 
 (defn read-string
-  "Reads one object from the string s.
+  "Reads one object from the string s. Optionally include reader
+  options, as specified in read.
 
   Note that read-string can execute code (controlled by *read-eval*),
   and as such should be used only with trusted sources.
@@ -3672,7 +3683,8 @@
   For data structure interop use clojure.edn/read-string"
   {:added "1.0"
    :static true}
-  [s] (clojure.lang.RT/readString s))
+  ([s] (clojure.lang.RT/readString s))
+  ([opts s] (clojure.lang.RT/readString s opts)))
 
 (defn subvec
   "Returns a persistent vector of the items in vector from
@@ -5526,7 +5538,7 @@
   {:added "1.0"
    :static true}
   [iter]
-  (clojure.lang.IteratorSeq/create iter))
+  (clojure.lang.RT/chunkIteratorSeq iter))
 
 (defn enumeration-seq
   "Returns a seq on a java.util.Enumeration"
@@ -7405,10 +7417,8 @@
 
 (deftype Eduction [xform coll]
    Iterable
-   (iterator [_] (.iterator ^java.util.Collection (sequence xform coll)))
-
-   clojure.lang.Seqable
-   (seq [_] (seq (sequence xform coll)))
+   (iterator [_]
+     (clojure.lang.TransformerIterator/create xform (clojure.lang.RT/iter coll)))
 
    clojure.lang.IReduceInit
    (reduce [_ f init]
@@ -7418,12 +7428,14 @@
    clojure.lang.Sequential)
 
 (defn eduction
-  "Returns a reducible/iterable/seqable application of
-  the transducer to the items in coll. Note that these applications
-  will be performed every time reduce/iterator/seq is called."
-  {:added "1.7"}
-  [xform coll]
-  (Eduction. xform coll))
+  "Returns a reducible/iterable application of the transducers
+  to the items in coll. Transducers are applied in order as if
+  combined with comp. Note that these applications will be
+  performed every time reduce/iterator is called."
+  {:arglists '([xform* coll])
+   :added "1.7"}
+  [& xforms]
+  (Eduction. (apply comp (butlast xforms)) (last xforms)))
 
 (defmethod print-method Eduction [c, ^Writer w]
   (if *print-readably*
@@ -7437,6 +7449,36 @@
   {:added "1.7"}
   [proc coll]
   (reduce #(proc %2) nil coll))
+
+
+(defn tagged-literal?
+  "Return true if the value is the data representation of a tagged literal"
+  {:added "1.7"}
+  [value]
+  (instance? clojure.lang.TaggedLiteral value))
+
+(defn tagged-literal
+  "Construct a data representation of a tagged literal from a
+  tag symbol and a form."
+  {:added "1.7"}
+  [^clojure.lang.Symbol tag form]
+  (clojure.lang.TaggedLiteral/create tag form))
+
+(defn reader-conditional?
+  "Return true if the value is the data representation of a reader conditional"
+  {:added "1.7"}
+  [value]
+  (instance? clojure.lang.ReaderConditional value))
+
+(defn reader-conditional
+  "Construct a data representation of a reader conditional.
+  If true, splicing? indicates read-cond-splicing."
+  {:added "1.7"}
+  [form ^Boolean splicing?]
+  (clojure.lang.ReaderConditional/create form splicing?))
+
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; data readers ;;;;;;;;;;;;;;;;;;
 

@@ -382,9 +382,9 @@ THIS FUNCTION IS NOT YET IMPLEMENTED."
                  (if (seq? form)
                    (let [form (macroexpand form)]
                      (cond
-                      (= (first form) 'clojure.core/loop*)
+                      (= (first form) 'loop*)
                       form
-                      (= (first form) 'clojure.core/recur)
+                      (= (first form) 'recur)
                       (concat `(recur (inc ~var-sym)) (rest form))
                       (and (not (qualified-specials?)) (= (first form) 'loop*))
                       form

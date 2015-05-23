@@ -45,7 +45,7 @@ static final Symbol LET = Symbol.intern("let*");
 static final Symbol LETFN = Symbol.intern("letfn*");
 static final Symbol DO = Symbol.intern("do");
 static final Symbol FN = Symbol.intern("fn*");
-static final Symbol FNONCE = (Symbol) Symbol.intern("clojure.core", "fn*").withMeta(RT.map(Keyword.intern(null, "once"), RT.T));
+static final Symbol FNONCE = (Symbol) Symbol.intern("fn*").withMeta(RT.map(Keyword.intern(null, "once"), RT.T));
 static final Symbol QUOTE = Symbol.intern("quote");
 static final Symbol THE_VAR = Symbol.intern("var");
 static final Symbol DOT = Symbol.intern(".");
@@ -421,11 +421,7 @@ public static boolean isQualifiedSpecials(){
 
 public static boolean isSpecial(Object sym){
 	if(sym instanceof Symbol) {
-		if (isQualifiedSpecials()) {
-			return qualifiedSpecials.containsKey(resolveSymbol((Symbol)sym));
-		} else {
-			return qualifiedSpecials.containsKey(resolveSymbol((Symbol)sym)) || specials.containsKey(sym);
-		}
+            return qualifiedSpecials.containsKey(resolveSymbol((Symbol)sym)) || specials.containsKey(sym);
 	} else {
 		return false;
 	}
@@ -4063,13 +4059,13 @@ static public class FnExpr extends ObjExpr{
 				{
 				fn.thisName = nm.name;
 				fn.isStatic = false; //RT.booleanCast(RT.get(nm.meta(), staticKey));
-				form = RT.cons(QFN, RT.next(RT.next(form)));
+				form = RT.cons(FN, RT.next(RT.next(form)));
 				}
 
 			//now (fn [args] body...) or (fn ([args] body...) ([args2] body2...) ...)
 			//turn former into latter
 			if(RT.second(form) instanceof IPersistentVector)
-				form = RT.list(QFN, RT.next(form));
+				form = RT.list(FN, RT.next(form));
 			fn.line = lineDeref();
 			fn.column = columnDeref();
 			FnMethod[] methodArray = new FnMethod[MAX_POSITIONAL_ARITY + 1];
@@ -6105,8 +6101,7 @@ public static class BodyExpr implements Expr, MaybePrimitiveExpr{
 	static class Parser implements IParser{
 		public Expr parse(C context, Object frms) {
 			ISeq forms = (ISeq) frms;
-			if((!isQualifiedSpecials() && Util.equals(RT.first(forms), DO)) || 
-                           Util.equals(RT.first(forms), QDO))
+			if(Util.equals(RT.first(forms), DO) || Util.equals(RT.first(forms), QDO))
 				forms = RT.next(forms);
 			PersistentVector exprs = PersistentVector.EMPTY;
 			for(; forms != null; forms = forms.next())
@@ -6880,7 +6875,7 @@ public static Object macroexpand1(Object x) {
 		{
 		ISeq form = (ISeq) x;
 		Object op = RT.first(form);
-		if(isSpecial(op))
+		if(isSpecial(op)) ;; TODOTODO
 			return x;
 		//macro expansion
 		Var v = isMacro(op);
@@ -6924,7 +6919,7 @@ public static Object macroexpand1(Object x) {
 						{
 						target = ((IObj)RT.list(IDENTITY, target)).withMeta(RT.map(RT.TAG_KEY,CLASS));
 						}
-					return preserveTag(form, RT.listStar(QDOT, target, meth, form.next().next()));
+					return preserveTag(form, RT.listStar(DOT, target, meth, form.next().next()));
 					}
 				else if(namesStaticMember(sym))
 					{
@@ -6933,7 +6928,7 @@ public static Object macroexpand1(Object x) {
 					if(c != null)
 						{
 						Symbol meth = Symbol.intern(sym.name);
-						return preserveTag(form, RT.listStar(QDOT, target, meth, form.next()));
+						return preserveTag(form, RT.listStar(DOT, target, meth, form.next()));
 						}
 					}
 				else
@@ -6945,12 +6940,12 @@ public static Object macroexpand1(Object x) {
 //						{
 //						Symbol target = Symbol.intern(sname.substring(0, idx));
 //						Symbol meth = Symbol.intern(sname.substring(idx + 1));
-//						return RT.listStar(QDOT, target, meth, form.rest());
+//						return RT.listStar(DOT, target, meth, form.rest());
 //						}
 					//(StringBuilder. "foo") => (new StringBuilder "foo")	
 					//else 
 					if(idx == sname.length() - 1)
-						return RT.listStar(QNEW, Symbol.intern(sname.substring(0, idx)), form.next());
+						return RT.listStar(NEW, Symbol.intern(sname.substring(0, idx)), form.next());
 					}
 				}
 			}
@@ -7047,7 +7042,7 @@ public static Object eval(Object form, boolean freshLoader) {
 					&& !(RT.first(form) instanceof Symbol
 						&& ((Symbol) RT.first(form)).name.startsWith("def"))))
 				{
-				ObjExpr fexpr = (ObjExpr) analyze(C.EXPRESSION, RT.list(QFN, PersistentVector.EMPTY, form),
+				ObjExpr fexpr = (ObjExpr) analyze(C.EXPRESSION, RT.list(FN, PersistentVector.EMPTY, form),
 													"eval" + RT.nextID());
 				IFn fn = (IFn) fexpr.eval();
 				return fn.invoke();
@@ -7199,7 +7194,7 @@ private static Expr analyzeSymbol(Symbol sym) {
 		if(isMacro(v) != null)
 			throw Util.runtimeException("Can't take value of a macro: " + v);
 		if(RT.booleanCast(RT.get(v.meta(),RT.CONST_KEY)))
-			return analyze(C.EXPRESSION, RT.list(QQUOTE, v.get()));
+			return analyze(C.EXPRESSION, RT.list(QUOTE, v.get()));
 		registerVar(v);
 		return new VarExpr(v, tag);
 		}

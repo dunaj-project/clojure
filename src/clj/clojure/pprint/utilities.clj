@@ -99,7 +99,7 @@ beginning of aseq"
        
 (defmacro ^{:private true} prlabel [prefix arg & more-args]
   "Print args to *err* in name = value format"
-  `(prerr ~@(cons (list 'clojure.core/quote prefix) (mapcat #(list (list 'clojure.core/quote %) "=" %) 
+  `(prerr ~@(cons (list 'quote prefix) (mapcat #(list (list 'quote %) "=" %) 
                                                   (cons arg (seq more-args))))))
 
 ;; Flush the pretty-print buffer without flushing the underlying stream

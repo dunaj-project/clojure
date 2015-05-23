@@ -843,7 +843,7 @@ public static class SyntaxQuoteReader extends AFn{
 		Object ret;
 		if(form instanceof Symbol)
                     if(Compiler.isQualifiedSpecial(form) || 
-                       ((Compiler.maybeResolveIn(Compiler.currentNS(), (Symbol)form) == null) && (Compiler.isSpecial(form))))
+                       ((Compiler.currentNS().getMapping((Symbol)form) == null) && (Compiler.isSpecial(form))))
 			ret = RT.list(Compiler.QUOTE, form);
                     else
 			{

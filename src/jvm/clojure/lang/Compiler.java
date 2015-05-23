@@ -103,6 +103,7 @@ static final Symbol IN_NS = Symbol.intern("in-ns");
 
 static final Symbol QDEF = Symbol.intern("clojure.core", "def");
 static final Symbol QLOOP = Symbol.intern("clojure.core", "loop*");
+static final Symbol ILOOP = Symbol.intern("iloop*");
 static final Symbol QILOOP = Symbol.intern("clojure.core", "iloop*");
 static final Symbol QRECUR = Symbol.intern("clojure.core", "recur");
 static final Symbol QIF = Symbol.intern("clojure.core", "if"); // might have missed some
@@ -421,27 +422,31 @@ public static boolean isQualifiedSpecials(){
 
 public static boolean isSpecial(Object sym){
 	if(sym instanceof Symbol) {
-            return qualifiedSpecials.containsKey(resolveSymbol((Symbol)sym)) || specials.containsKey(sym);
+		return qualifiedSpecials.containsKey(resolveSymbol((Symbol)sym)) || specials.containsKey(sym);
 	} else {
 		return false;
 	}
 }
 
+static IParser qualifiedSpecialParser(Object sym){
+	if(sym instanceof Symbol) {
+		IParser p = (IParser) qualifiedSpecials.valAt(resolveSymbol((Symbol)sym));
+		if (p == null) {
+			p = (IParser) qualifiedSpecials.valAt(sym);
+		}
+		return p;
+	} else {
+		return null;
+	}
+}
+
 static IParser specialParser(Object sym){
 	if(sym instanceof Symbol) {
-		if (isQualifiedSpecials()) {
-			IParser p = (IParser) qualifiedSpecials.valAt(resolveSymbol((Symbol)sym));
-			if (p == null) {
-				p = (IParser) qualifiedSpecials.valAt(sym);
-			}
-			return p;
-		} else {
-			IParser p = (IParser) qualifiedSpecials.valAt(resolveSymbol((Symbol)sym));
-			if (p == null) {
-				p = (IParser) specials.valAt(sym);
-			}
-			return p;
+		IParser p = (IParser) specials.valAt(resolveSymbol((Symbol)sym));
+		if (p == null) {
+			p = (IParser) specials.valAt(sym);
 		}
+		return p;
 	} else {
 		return null;
 	}
@@ -6324,8 +6329,8 @@ public static class LetExpr implements Expr, MaybePrimitiveExpr{
 		public Expr parse(C context, Object frm) {
 			ISeq form = (ISeq) frm;
 			//(let [var val var2 val2 ...] body...)
-			boolean isLoop = RT.first(form).equals(LOOP) || RT.first(form).equals(QLOOP) || RT.first(form).equals(QILOOP);
-			boolean isIntLoop = RT.first(form).equals(QILOOP);
+			boolean isLoop = RT.first(form).equals(LOOP) || RT.first(form).equals(QLOOP) || RT.first(form).equals(ILOOP) || RT.first(form).equals(QILOOP);
+			boolean isIntLoop = RT.first(form).equals(ILOOP) || RT.first(form).equals(QILOOP);
 			if(!(RT.second(form) instanceof IPersistentVector))
 				throw new IllegalArgumentException("Bad binding form, expected vector");
 
@@ -6875,8 +6880,6 @@ public static Object macroexpand1(Object x) {
 		{
 		ISeq form = (ISeq) x;
 		Object op = RT.first(form);
-		if(isSpecial(op)) ;; TODOTODO
-			return x;
 		//macro expansion
 		Var v = isMacro(op);
 		if(v != null)
@@ -6982,11 +6985,13 @@ private static Expr analyzeSeq(C context, ISeq form, String name) {
 		if(inline != null)
 			return analyze(context, preserveTag(form, inline.applyTo(RT.next(form))));
 		IParser p;
-		if(op.equals(QFN) || (!isQualifiedSpecials() && op.equals(FN)))
+		if(op.equals(QFN) || op.equals(FN))
 			return FnExpr.parse(context, form, name);
 		else if((p = specialParser(op)) != null)
 			return p.parse(context, form);
-		else
+		else if((p = qualifiedSpecialParser(op)) != null)
+			return p.parse(context, form);
+		else 
 			return InvokeExpr.parse(context, form);
 		}
 	catch(Throwable e)
@@ -7029,8 +7034,7 @@ public static Object eval(Object form, boolean freshLoader) {
 		try
 			{
 			form = macroexpand(form);
-			if(form instanceof ISeq && 
-                           (Util.equals(RT.first(form), QDO) || (!isQualifiedSpecials() && Util.equals(RT.first(form), DO))))
+			if(form instanceof ISeq && (Util.equals(RT.first(form), QDO) || Util.equals(RT.first(form), DO)))
 				{
 				ISeq s = RT.next(form);
 				for(; RT.next(s) != null; s = RT.next(s))
@@ -7572,8 +7576,7 @@ static void compile1(GeneratorAdapter gen, ObjExpr objx, Object form) {
 	try
 		{
 		form = macroexpand(form);
-		if(form instanceof ISeq && 
-                   (Util.equals(RT.first(form), QDO) || (!isQualifiedSpecials() && Util.equals(RT.first(form), DO))))
+		if(form instanceof ISeq && (Util.equals(RT.first(form), QDO) || Util.equals(RT.first(form), DO)))
 			{
 			for(ISeq s = RT.next(form); s != null; s = RT.next(s))
 				{

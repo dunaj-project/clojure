@@ -428,6 +428,14 @@ public static boolean isSpecial(Object sym){
 	}
 }
 
+public static boolean isQualifiedSpecial(Object sym){
+	if(sym instanceof Symbol) {
+		return qualifiedSpecials.containsKey(resolveSymbol((Symbol)sym));
+	} else {
+		return false;
+	}
+}
+
 static IParser qualifiedSpecialParser(Object sym){
 	if(sym instanceof Symbol) {
 		IParser p = (IParser) qualifiedSpecials.valAt(resolveSymbol((Symbol)sym));
@@ -449,30 +457,6 @@ static IParser specialParser(Object sym){
 		return p;
 	} else {
 		return null;
-	}
-}
-
-static Symbol resolveSpecial(Object o){
-	// o must point to special symbol
-	Symbol sym = (Symbol) o;
-	return resolveUnqualifiedSpecial(sym);
-        /* // every special form is defined in clojure.core
-	if (isQualifiedSpecials()) {
-		return resolveSymbol(sym);
-	} else {
-		if (r == null) {
-			r = resolveSymbol(sym);
-		}
-		return r;
-	}
-        */
-}
-
-static Symbol resolveUnqualifiedSpecial(Symbol sym) {
-        if (sym.ns == null) {
-		return Symbol.intern("clojure.core", sym.name);
-	} else {
-		return sym;
 	}
 }
 
@@ -6881,6 +6865,8 @@ public static Object macroexpand1(Object x) {
 		ISeq form = (ISeq) x;
 		Object op = RT.first(form);
 		//macro expansion
+		if(isQualifiedSpecial(op))
+			return x;
 		Var v = isMacro(op);
 		if(v != null)
 			{
@@ -6904,7 +6890,7 @@ public static Object macroexpand1(Object x) {
 							throw (CompilerException) e;
 					}
 			}
-		else
+		else if ((op != null) && (!".".equals(op.toString())))
 			{
 			if(op instanceof Symbol)
 				{
@@ -6947,7 +6933,7 @@ public static Object macroexpand1(Object x) {
 //						}
 					//(StringBuilder. "foo") => (new StringBuilder "foo")	
 					//else 
-					if(idx == sname.length() - 1)
+					if((idx != -1) && (idx == sname.length() - 1))
 						return RT.listStar(NEW, Symbol.intern(sname.substring(0, idx)), form.next());
 					}
 				}
@@ -6958,8 +6944,9 @@ public static Object macroexpand1(Object x) {
 
 static Object macroexpand(Object form) {
 	Object exf = macroexpand1(form);
-	if(exf != form)
+	if(exf != form) {
 		return macroexpand(exf);
+        }
 	return form;
 }
 
@@ -6975,8 +6962,12 @@ private static Expr analyzeSeq(C context, ISeq form, String name) {
 	try
 		{
 		Object me = macroexpand1(form);
-		if(me != form)
+		if(me != form) {
+                    //if (form != null) RT.errPrintWriter().format("MEF! %s\n", form);
+                    //if (me != null) RT.errPrintWriter().format("MEM! %s\n", me);
+                    
 			return analyze(context, me, name);
+                }
 
 		Object op = RT.first(form);
 		if(op == null)

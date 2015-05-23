@@ -56,7 +56,7 @@
       [opts s])))
 
 (def obj-specs
-  '#{clone equals finalize getClass hashCode notify notifyAll toString wait})
+  '#{"clone" "equals" "finalize" "getClass" "hashCode" "notify" "notifyAll" "toString" "wait"})
 
 (defn- translate-name [proto spec]
   (if (and (not (class? proto))

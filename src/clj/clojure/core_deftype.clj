@@ -55,13 +55,18 @@
       (recur (assoc opts k v) rs)
       [opts s])))
 
+(def obj-specs
+  '#{clone equals finalize getClass hashCode notify notifyAll toString wait})
+
 (defn- translate-name [proto spec]
   (if (and (not (class? proto))
            (not (nil? proto))
            (var? (resolve proto))
            (:clojure.core/protocol (deref (resolve proto))))
     (let [tr-map (:method-map (deref (resolve proto)))
-          trk (get tr-map (keyword (name (first spec))))]
+          n (name (first spec))
+          trk (get tr-map (keyword n))
+          trk (if (and (nil? trk) (obj-specs n)) n trk)]
       (assert trk (str "Translation of method " (first spec)
                        " not found in protocol " proto
                        " which contains following data "

@@ -6866,8 +6866,10 @@ public static Object macroexpand1(Object x) {
 		Object op = RT.first(form);
 		//macro expansion
 		if(isQualifiedSpecial(op))
-			return x;
-		Var v = isMacro(op);
+                    return x;
+                if(isSpecial(op))
+                    return x;
+                Var v = isMacro(op);
 		if(v != null)
 			{
 				try
@@ -6890,7 +6892,7 @@ public static Object macroexpand1(Object x) {
 							throw (CompilerException) e;
 					}
 			}
-		else if ((op != null) && (!".".equals(op.toString())))
+		else
 			{
 			if(op instanceof Symbol)
 				{
@@ -6944,9 +6946,8 @@ public static Object macroexpand1(Object x) {
 
 static Object macroexpand(Object form) {
 	Object exf = macroexpand1(form);
-	if(exf != form) {
+	if(exf != form)
 		return macroexpand(exf);
-        }
 	return form;
 }
 
@@ -6962,12 +6963,8 @@ private static Expr analyzeSeq(C context, ISeq form, String name) {
 	try
 		{
 		Object me = macroexpand1(form);
-		if(me != form) {
-                    //if (form != null) RT.errPrintWriter().format("MEF! %s\n", form);
-                    //if (me != null) RT.errPrintWriter().format("MEM! %s\n", me);
-                    
+		if(me != form)
 			return analyze(context, me, name);
-                }
 
 		Object op = RT.first(form);
 		if(op == null)
@@ -6982,7 +6979,7 @@ private static Expr analyzeSeq(C context, ISeq form, String name) {
 			return p.parse(context, form);
 		else if((p = qualifiedSpecialParser(op)) != null)
 			return p.parse(context, form);
-		else 
+		else
 			return InvokeExpr.parse(context, form);
 		}
 	catch(Throwable e)

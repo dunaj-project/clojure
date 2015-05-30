@@ -822,6 +822,35 @@ static Object getFrom(Object coll, Object key, Object notFound){
 
 }
 
+static public Object getOrig(Object coll, Object key, Object notFound){
+	if(coll instanceof ILookup)
+		return ((ILookup) coll).valAt(key, notFound);
+	return getFromOrig(coll, key, notFound);
+}
+
+static Object getFromOrig(Object coll, Object key, Object notFound){
+	if(coll == null)
+		return notFound;
+	else if(coll instanceof Map) {
+		Map m = (Map) coll;
+		if(m.containsKey(key))
+			return m.get(key);
+		return notFound;
+	}
+	else if(coll instanceof IPersistentSet) {
+		IPersistentSet set = (IPersistentSet) coll;
+		if(set.contains(key))
+			return set.get(key);
+		return notFound;
+	}
+	else if(key instanceof Number && (coll instanceof String || coll.getClass().isArray())) {
+		int n = ((Number) key).intValue();
+		return n >= 0 && n < count(coll) ? nth(coll, n) : notFound;
+	}
+	return notFound;
+
+}
+
 static public Associative assoc(Object coll, Object key, Object val){
 	if(coll == null)
 		return new PersistentArrayMap(new Object[]{key, val});

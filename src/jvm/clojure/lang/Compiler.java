@@ -6864,12 +6864,12 @@ public static Object macroexpand1(Object x) {
 		{
 		ISeq form = (ISeq) x;
 		Object op = RT.first(form);
-		//macro expansion
 		if(isQualifiedSpecial(op))
-                    return x;
-                if(isSpecial(op))
-                    return x;
-                Var v = isMacro(op);
+			return x;
+		if(isSpecial(op))
+			return x;
+		//macro expansion
+		Var v = isMacro(op);
 		if(v != null)
 			{
 				try

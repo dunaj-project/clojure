@@ -841,12 +841,10 @@ public static class SyntaxQuoteReader extends AFn{
 
 	static Object syntaxQuote(Object form) {
 		Object ret;
-		if(form instanceof Symbol)
-                    if(Compiler.isQualifiedSpecial(form) || 
-                       ((Compiler.currentNS().getMapping((Symbol)form) == null) && (Compiler.isSpecial(form))))
-			ret = RT.list(Compiler.QUOTE, form);
-                    else
-			{
+		if(form instanceof Symbol) {
+			if(Compiler.isQualifiedSpecial(form) || ((Compiler.currentNS().getMapping((Symbol)form) == null) && (Compiler.isSpecial(form))))
+				ret = RT.list(Compiler.QUOTE, form);
+			else {
 			Symbol sym = (Symbol) form;
 			if(sym.ns == null && sym.name.endsWith("#"))
 				{
@@ -887,6 +885,7 @@ public static class SyntaxQuoteReader extends AFn{
 				}
 			ret = RT.list(Compiler.QUOTE, sym);
 			}
+		}
 		else if(isUnquote(form))
 			return RT.second(form);
 		else if(isUnquoteSplicing(form))

@@ -380,18 +380,11 @@ THIS FUNCTION IS NOT YET IMPLEMENTED."
 (defn- pll-mod-body [var-sym body]
   (letfn [(inner [form]
                  (if (seq? form)
-                   (let [form (macroexpand form)]
-                     (cond
-                      (= (first form) 'loop*)
-                      form
-                      (= (first form) 'recur)
-                      (concat `(recur (inc ~var-sym)) (rest form))
-                      (and (not (qualified-specials?)) (= (first form) 'loop*))
-                      form
-                      (and (not (qualified-specials?)) (= (first form) 'recur))
-                      (concat `(recur (inc ~var-sym)) (rest form))
-                      :else
-                      (walk inner identity form)))
+                   (let [form (macroexpand form)] 
+                     (condp = (first form)
+                       'loop* form
+                       'recur (concat `(recur (inc ~var-sym)) (rest form))
+                       (walk inner identity form)))
                    form))]
     (walk inner identity body)))
 

@@ -464,6 +464,9 @@
                 (if (instance? clojure.lang.MapEquivalence m#) m# (into {} m#)))))
        (def ~name {:on '~classname
                    :on-class ~classname
+                   :tsig ~(:tsig (meta name))
+                   :qtsig ~(:qtsig (meta name))
+                   :fields ~(list 'quote fields)
                    ::record true}))))
 
 (defn record?
@@ -583,6 +586,8 @@
          {:on '~classname
           :on-class ~classname
           :tsig ~(:tsig (meta name))
+          :qtsig ~(:qtsig (meta name))
+          :fields ~(list 'quote fields)
           ::type true}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;; protocols ;;;;;;;;;;;;;;;;;;;;;;;;

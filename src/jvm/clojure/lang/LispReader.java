@@ -165,7 +165,8 @@ static public final Keyword EOFTHROW = Keyword.intern(null,"eofthrow");
 
 // Platform features - always installed
 static private final Keyword PLATFORM_KEY = Keyword.intern(null, "clj");
-static private final Object PLATFORM_FEATURES = PersistentHashSet.create(PLATFORM_KEY);
+static private final Keyword DUNAJ_KEY = Keyword.intern(null, "dunaj");
+static private final Object PLATFORM_FEATURES = PersistentHashSet.create(PLATFORM_KEY, DUNAJ_KEY);
 
 // Reader conditional options - use with :read-cond
 static public final Keyword COND_ALLOW = Keyword.intern(null, "allow");
@@ -216,7 +217,7 @@ static private Object installPlatformFeature(Object opts) {
         if (features == null)
             return mopts.assoc(LispReader.OPT_FEATURES, PLATFORM_FEATURES);
         else
-            return mopts.assoc(LispReader.OPT_FEATURES, RT.conj((IPersistentSet) features, PLATFORM_KEY));
+            return mopts.assoc(LispReader.OPT_FEATURES, RT.conj((IPersistentSet) RT.conj((IPersistentSet) features, PLATFORM_KEY), DUNAJ_KEY));
     }
 }
 

@@ -677,18 +677,21 @@
   "Returns true if x satisfies the protocol"
   {:added "1.2"
    :tag Boolean}
-  ^boolean [^clojure.core.PRR protocol x]
-  (boolean (or (satisfies-direct? protocol x)
-               (let [c (class x)
-                     impl #(get (.-impls protocol) %)]
-                 (or (impl c)
-                     (let [arr ^objects (.-satisfies-dispatch protocol)]
-                       (and c arr
-                            (let [l (alength arr)]
-                              (loop [i 0]
-                                (cond (== i l) false
-                                      (instance? ^java.lang.Class (aget arr i) x) true
-                                      :else (recur (unchecked-inc i))))))))))))
+  ^boolean [protocol x]
+  (boolean
+   (if-not (instance? clojure.core.PRR protocol)
+     (find-protocol-impl protocol x)
+     (or (satisfies-direct? protocol x)
+         (let [c (class x)
+               impl #(get (.-impls ^clojure.core.PRR protocol) %)]
+           (or (impl c)
+               (let [arr ^objects (.-satisfies-dispatch ^clojure.core.PRR protocol)]
+                 (and c arr
+                      (let [l (alength arr)]
+                        (loop [i 0]
+                          (cond (== i l) false
+                                (instance? ^java.lang.Class (aget arr i) x) true
+                                :else (recur (unchecked-inc i)))))))))))))
 
 (defn -cache-protocol-fn [^clojure.lang.AFunction pf x ^Class c ^clojure.lang.IFn interf]
   (let [cache  (.__methodImplCache pf)
